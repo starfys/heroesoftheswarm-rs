@@ -202,6 +202,31 @@ fn test_offset_calc() {
     for tuple in ooflist2.iter() {
         println!("{:?}", tuple);
     }
+	
+	// Calculates the offset for a number of position parameters
+	pub fn calculate_offsets(radius: f32) -> Vec<(f32,f32)>
+	{	
+		// Initialize list with origin offset (0,0)
+		let mut offset_list: Vec<(f32, f32)> = Vec::new();
+		offset_list.push((0.0, 0.0));
+		
+		// Generate other offsets
+		for i in (1..4)
+		{
+			let shell: f32 = i as f32;
+		
+			// Generate i*4 positions for each shell
+			for j in (0..(i*4))
+			{
+				let rads: f32 = (j as f32)*((3.141592654)/(2.0*shell));						// Calculate angle of current offset
+				offset_list.push((shell*radius*(rads.cos()), shell*radius*(rads.sin())));	// Push scaled coordinates onto array
+			}
+		}
+		
+		// Return generated offsets
+		offset_list
+	}
+	
 }
 
 /// Represents a member of a swarm
