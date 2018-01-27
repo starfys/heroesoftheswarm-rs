@@ -48,7 +48,7 @@ impl Swarm {
             direction: 0.0,
             members: [None; MAX_SWARM_SIZE],
             color: (0, 0, 0),
-            program: SwarmProgram::new(),
+            program: SwarmProgram::new(vec![]),
         }
     }
     /// Performs 1 tick
@@ -112,7 +112,7 @@ pub struct Bullet {
 impl Bullet {
     /// Constructor
     // TODO: add arguments
-    pub fn new(owner: usize, x: f32, y: f32) -> Self {
+    pub fn new(owner: usize, x: f32, y: f32, direction: f32) -> Self {
         Bullet {
             owner: owner,
             x: x,
@@ -146,14 +146,13 @@ mod tests {
         // 16 steps to complete move turn pairs at 45 degrees
         let num_steps: usize = 16;
         // append commands to program
-        for i in (0..num_steps).step_by(2) {
-            swarm.program.commands[i] = move_command;
-            swarm.program.commands[i + 1] = turn_command;
+        for i in 0..num_steps {
+            swarm.program.commands.push(move_command);
+            swarm.program.commands.push(turn_command);
             println!("{:?} ", i);
         }
 
-        println!("{:?}\n", swarm.program.commands);
-
+        println!("{:?}", swarm.program.commands);
 
         // execute commands
         for i in (0..num_steps) {
@@ -167,7 +166,7 @@ mod tests {
 
     #[test]
     fn update_bullet() {
-        let mut bullet = Bullet::new(0, 0.0, 0.0);
+        let mut bullet = Bullet::new(0, 0.0, 0.0, 0.0);
         bullet.direction = 90.0;
         bullet.update();
         assert!(bullet.x - 1. <= f32::EPSILON);
