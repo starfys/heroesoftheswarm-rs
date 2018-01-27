@@ -154,6 +154,16 @@ pub fn run() {
             // Get an ID for this connection
             let session_id: usize = id_counter.fetch_add(1, AtomicOrdering::SeqCst);
             info!("New session id: {}", session_id);
+            // Create a swarm for this session
+            // Create a new scope for the write lock
+            {
+                // Get a lock on the world
+                let mut write_lock = world_client.write().unwrap();
+                // Get a mutable reference to the world
+                let world_ref = write_lock.deref_mut();
+                // Insert a new player
+                world_ref.add_player(session_id);
+            }
             // accept the request to be a ws connection if it does
             let message_handler = upgrade
                 // Use our protocol

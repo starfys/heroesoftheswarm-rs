@@ -58,6 +58,13 @@ impl World {
             bullets: Vec::with_capacity(capacity * 10),
         }
     }
+    /// Adds a player to the server with the given ID
+    pub fn add_player(&mut self, id: usize) {
+        for _ in 0..10 {
+            info!("Adding player");
+        }
+        self.swarms.insert(id, Swarm::new(0.0, 0.0));
+    }
     /// Performs one "tick" of the world
     /// return: The amount of time elapsed during the tick
     /// Executes each swarm's program on itself
@@ -67,12 +74,12 @@ impl World {
         // Record time at beginning of update
         let start_time = Instant::now();
         // Update each member of the swarm with its own program
-        for (_id, swarm) in &mut self.swarms {
+        for (_id, swarm) in self.swarms.iter_mut() {
             swarm.update()
         }
         // Update each bullet
         // TODO: different logic for this as a bullet could be destroyed
-        for bullet in &mut self.bullets {
+        for bullet in self.bullets.iter_mut() {
             bullet.update()
         }
         // Record time at end of update and return the time elapsed
@@ -82,19 +89,7 @@ impl World {
     /// Used to render the world on a client
     pub fn serialize(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(&WorldState {
-            swarm_entities: self.swarms
-                .iter()
-                // Get a vector of each
-                .map(|(id, swarm)| {
-                    swarm
-                        .members
-                        .iter()
-                        .cloned()
-                        .collect::<Vec<Option<SwarmMember>>>()
-                })
-                .flat_map(|member| member)
-                .flat_map(|member| member)
-                .collect(),
+            swarms: self.swarms.clone(),
             bullets: self.bullets.clone(),
         })
     }
@@ -102,7 +97,7 @@ impl World {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct WorldState {
-    swarm_entities: Vec<SwarmMember>,
+    swarms: HashMap<usize, Swarm>,
     bullets: Vec<Bullet>,
 }
 

@@ -23,7 +23,7 @@ const INITIAL_SWARM_SIZE: usize = 10;
 const MAX_SWARM_SIZE: usize = 20;
 
 /// Represents a player's swarm
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Swarm {
     /// X position
     pub x: f32,
@@ -32,10 +32,11 @@ pub struct Swarm {
     /// Direction the swarm is facing
     pub direction: f32,
     /// Members of the swarm
-    pub members: [Option<SwarmMember>; MAX_SWARM_SIZE],
+    pub members: Vec<Option<SwarmMember>>,
     /// Color of the swarm
     pub color: (u8, u8, u8),
     /// Program used to execute the swarm
+    #[serde(skip_serializing)]
     pub program: SwarmProgram,
 }
 /// Functions for a swarm
@@ -46,41 +47,42 @@ impl Swarm {
             x: x,
             y: y,
             direction: 0.0,
-            members: [None; MAX_SWARM_SIZE],
+            members: vec![Some(SwarmMember::new())],
             color: (0, 0, 0),
-            program: SwarmProgram::new(vec![]),
+            program: SwarmProgram::new(vec![SwarmCommand::MOVE]),
         }
     }
     /// Performs 1 tick
     pub fn update(&mut self) {
         // TODO: put this somewhere else
         let swarm_update_distance: f32 = 1.0;
+        if self.program.commands.len() != 0 {
+            let pc: usize = self.program.program_counter;
+            match self.program.commands[pc] {
+                SwarmCommand::MOVE => {
+                    debug!("Swarm is moving forward");
+                    // Update the x and y position
+                    self.x += swarm_update_distance * self.direction.to_radians().cos();
+                    self.y -= swarm_update_distance * self.direction.to_radians().sin();
+                }
+                SwarmCommand::TURN(turn_amt) => {
+                    // turn logic
+                    self.direction += turn_amt;
+                }
+                SwarmCommand::NOOP => {
+                    println!("No operation.");
+                }
+            }
 
-        let pc: usize = self.program.program_counter;
+            self.program.program_counter += 1;
 
-        match self.program.commands[pc] {
-            SwarmCommand::MOVE => {
-                // Update the x and y position
-                self.x += swarm_update_distance * self.direction.to_radians().cos();
-                self.y -= swarm_update_distance * self.direction.to_radians().sin();
-            }
-            SwarmCommand::TURN(turn_amt) => {
-                // turn logic
-                self.direction += turn_amt;
-            }
-            SwarmCommand::NOOP => {
-                println!("No operation.");
-            }
+            // TODO: Check collision
+            //
+            // TODO: Bounds checking
+            // maybe do as match?
+            self.direction %= 360.0;
+            self.program.program_counter %= self.program.commands.len();
         }
-
-        self.program.program_counter += 1;
-
-        // TODO: Check collision
-        //
-        // TODO: Bounds checking
-        // maybe do as match?
-        self.direction %= 360.0;
-        self.program.program_counter %= self.program.commands.len();
     }
 }
 /// Represents a member of a swarm
@@ -92,6 +94,16 @@ pub struct SwarmMember {
     pub y: f32,
     /// Health
     pub health: i32,
+}
+/// Functions for SwarmMember
+impl SwarmMember {
+    pub fn new() -> Self {
+        SwarmMember {
+            x: 0.0,
+            y: 0.0,
+            health: 5,
+        }
+    }
 }
 
 /// Represents a bullet
@@ -147,8 +159,8 @@ mod tests {
         let num_steps: usize = 16;
         // append commands to program
         for i in 0..num_steps {
-            swarm.program.commands.push(move_command);
             swarm.program.commands.push(turn_command);
+            swarm.program.commands.push(move_command);
             println!("{:?} ", i);
         }
 
