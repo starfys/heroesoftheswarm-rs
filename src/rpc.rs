@@ -54,3 +54,18 @@ impl Configuration {
         }
     }
 }
+
+/// A vector in 2d space
+/// Used for representing coordinates in
+/// the viewport sent for screen updates
+#[derive(Deserialize)]
+pub struct Vec2 {
+    x: f32,
+    y: f32,
+}
+
+/// A request for compilation
+#[derive(Deserialize)]
+pub struct CompileRequest {
+    program: String,
+}

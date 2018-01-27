@@ -13,9 +13,10 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
+extern crate serde_json;
 
 use futures::{Future, Sink, Stream};
-use rpc::{Configuration, Response, ResponseMessage};
+use rpc::{CompileRequest, Configuration, Response, ResponseMessage, Vec2};
 use std::fmt::Debug;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
@@ -63,12 +64,10 @@ impl GameServer {
     fn handle_message(message: OwnedMessage, world: &Arc<RwLock<World>>) -> Option<OwnedMessage> {
         match message {
             // Handle incoming text data
-            OwnedMessage::Text(data) => match data.as_ref() {
-                // This is sent if the client wants the game's state
-                "U" => {
-                    // Get a readable reference to the world
-                    // (locks until the world is not being written)
-                    match world.read() {
+            OwnedMessage::Text(data) => {
+                // Try to parse it as a request for updates
+                match serde_json::from_str::<Vec<Vec2>>(&data) {
+                    Ok(coords) => match world.read() {
                         Ok(world) => {
                             // Create a message type
                             let message = Response::new(ResponseMessage::WORLD(world.get_state()));
@@ -81,10 +80,30 @@ impl GameServer {
                             warn!("Failed to get read lock on world. Not sending world state");
                             None
                         }
-                    }
-                }
-                _ => None,
-            },
+                    },
+                    Err(_) => None,
+                };
+                // Try to parse it as a request for compilation
+                match serde_json::from_str::<CompileRequest>(&data) {
+                    Ok(compile_request) => match world.read() {
+                        Ok(world) => {
+                            // Create a message type
+                            let message = Response::new(ResponseMessage::WORLD(world.get_state()));
+                            match message.serialize() {
+                                Ok(message) => Some(OwnedMessage::Text(message)),
+                                Err(error) => None,
+                            }
+                        }
+                        Err(error) => {
+                            warn!("Failed to get read lock on world. Not sending world state");
+                            None
+                        }
+                    },
+                    Err(_) => None,
+                };
+                // If it matches none of the cases, just return None
+                None
+            }
             // Handle incoming binary data
             OwnedMessage::Binary(_) => None,
             // Handle heartbeats

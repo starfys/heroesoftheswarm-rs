@@ -34,6 +34,8 @@ pub struct Swarm {
     pub direction: f32,
     /// Members of the swarm
     pub members: Vec<Option<SwarmMember>>,
+    /// Offsets
+    pub offsets: Vec<(f32, f32)>,
     /// Color of the swarm
     pub color: (u8, u8, u8),
     /// Experience gained by the swarm
@@ -48,14 +50,18 @@ pub struct Swarm {
 impl Swarm {
     /// Constructor
     pub fn new(x: f32, y: f32, num_members: usize) -> Self {
+        // Build the offsets
+        let offsets = Swarm::calculate_offsets(30.0);
+        // Create the object
         Swarm {
             x: x,
             y: y,
             direction: 0.0,
-            members: vec![Some(SwarmMember::new()); num_members],
+            members: Swarm::build_swarm(num_members, &offsets),
+            offsets: offsets,
             color: (0, 0, 0),
             experience: 0,
-            bullet_duration: 60 * 5, // 60fps * 5 seconds default duration
+            bullet_duration: 60, // 60fps * 1 seconds default duration
             program: SwarmProgram::new(vec![
                 SwarmCommand::MOVE,
                 SwarmCommand::TURN(10.0),
@@ -65,77 +71,20 @@ impl Swarm {
                 SwarmCommand::TURN(10.0),
                 SwarmCommand::MOVE,
                 SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::MOVE,
-                SwarmCommand::TURN(10.0),
-                SwarmCommand::FIRE,
-                SwarmCommand::FIRE,
-                SwarmCommand::FIRE,
-                SwarmCommand::FIRE,
                 SwarmCommand::FIRE,
             ]),
         }
+    }
+    /// Builds a swarm of N members
+    pub fn build_swarm(num_members: usize, offsets: &Vec<(f32, f32)>) -> Vec<Option<SwarmMember>> {
+        // Vector to store the swarm
+        let mut swarm: Vec<Option<SwarmMember>> = Vec::with_capacity(num_members);
+        // add the members
+        for i in 0..num_members {
+            swarm.push(Some(SwarmMember::new(offsets[i].0, offsets[i].1)))
+        }
+        // Return the swarm
+        swarm
     }
     /// Supplementary function to add color to a swarm. Typically used with the constructor
     pub fn with_color(mut self, color: (u8, u8, u8)) -> Self {
@@ -157,9 +106,9 @@ impl Swarm {
                 SwarmCommand::MOVE => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width ||
-                        self.y - EPSILON <= 0.0 ||
-                        self.y + EPSILON >= world_height
+                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width
+                        || self.y - EPSILON <= 0.0
+                        || self.y + EPSILON >= world_height
                     {
                         self.direction = -self.direction;
                     }
@@ -176,6 +125,15 @@ impl Swarm {
                     self.direction += turn_amt;
                     // Keep direction and program counter within their bounds
                     self.direction %= 360.0;
+                    for member in self.members.iter_mut() {
+                        match member {
+                            &mut Some(mut member) => {
+                                member.direction += turn_amt;
+                                member.direction %= 360.0;
+                            }
+                            &mut None => {}
+                        }
+                    }
                 }
                 SwarmCommand::NOOP => {}
             }
@@ -205,7 +163,6 @@ impl Swarm {
         }
     }
 
-
     // Calculates the offset for a number of position parameters
     pub fn calculate_offsets(radius: f32) -> Vec<(f32, f32)> {
         // Initialize list with origin offset (0,0)
@@ -219,10 +176,7 @@ impl Swarm {
             // Generate i*4 positions for each shell
             for j in 0..(i * 4) {
                 let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
-                offset_list.push((
-                    shell * radius * (rads.cos()),
-                    shell * radius * (rads.sin()),
-                )); // Push scaled coordinates onto array
+                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
             }
         }
 
@@ -257,15 +211,18 @@ pub struct SwarmMember {
     pub x: f32,
     /// Y position
     pub y: f32,
+    /// Direction
+    pub direction: f32,
     /// Health
     pub health: i32,
 }
 /// Functions for SwarmMember
 impl SwarmMember {
-    pub fn new() -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
         SwarmMember {
-            x: 0.0,
-            y: 0.0,
+            x: x,
+            y: y,
+            direction: 0.0,
             health: 5,
         }
     }
