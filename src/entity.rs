@@ -260,7 +260,7 @@ impl Bullet {
     /// Performs 1 tick
     pub fn update(&mut self) {
         // TODO: put this somewhere else
-        let bullet_update_distance: f32 = 1.0;
+        let bullet_update_distance: f32 = 20.0;
         // Update the x and y position
         self.x += bullet_update_distance * self.direction.to_radians().cos();
         self.y -= bullet_update_distance * self.direction.to_radians().sin();
