@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 #![feature(duration_from_micros)]
+#![feature(iterator_step_by)]
 extern crate env_logger;
 extern crate futures;
 #[macro_use]

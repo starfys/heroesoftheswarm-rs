@@ -40,53 +40,66 @@ impl FromStr for SwarmCommand {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TODO: Parse a line of swarm code as an enum
 
-        let command: Vec<&str> = s.trim().split(" ").collect();	
-        
-		// Match 
-        match &command[0]
-        {
-                &"MOVE" => Ok(SwarmCommand::MOVE),        // Move command case
-                &"NOOP" => Ok(SwarmCommand::NOOP),        // Noop command case
-                &"TURN" => if command.len() == 2          // Check if turn parameter was provided
-                           {
-                                   match command[1].parse::<f32>()
-                                   {
-                                           Ok(val) => if val.is_normal() { Ok(SwarmCommand::TURN(val)) }        // If parameter is valid, return from function
-										              else { Err(GenericError{ description: "Invalid float parameter for TURN.".into() }) },        // If parameter is not normal, throw error
-                                           Err(_)  => Err(GenericError{ description: "Invalid float parameter for TURN.".into() }),        // If parameter cannot be converted to float, throw error
-                                   }
-                           }
-						   else { Err(GenericError{ description: "No parameters found for TURN.".into() }) },        // No parameter provided
-                _      => Err(GenericError{ description: "Command not recognized.".into() }),        // Invalid command case
+        let command: Vec<&str> = s.trim().split(" ").collect();
+
+        // Match
+        match &command[0] {
+            &"MOVE" => Ok(SwarmCommand::MOVE),        // Move command case
+            &"NOOP" => Ok(SwarmCommand::NOOP),        // Noop command case
+            &"TURN" => {
+                if command.len() == 2
+                // Check if turn parameter was provided
+                {
+                    match command[1].parse::<f32>() {
+                        Ok(val) => {
+                            if val.is_normal() {
+                                Ok(SwarmCommand::TURN(val))
+                            }
+                            // If parameter is valid, return from function
+                            else {
+                                Err(GenericError {
+                                    description: "Invalid float parameter for TURN.".into(),
+                                })
+                            }
+                        }        // If parameter is not normal, throw error
+                        Err(_) => Err(GenericError {
+                            description: "Invalid float parameter for TURN.".into(),
+                        }),        // If parameter cannot be converted to float, throw error
+                    }
+                } else {
+                    Err(GenericError {
+                        description: "No parameters found for TURN.".into(),
+                    })
+                }
+            }        // No parameter provided
+            _ => Err(GenericError {
+                description: "Command not recognized.".into(),
+            }),        // Invalid command case
         }
     }
 }
 
 /// Test the string conversion command
 #[test]
-fn test_verifier()
-{
-	let c1: SwarmCommand = match "NOOP".parse()
-                {
-                        Ok(com1) => com1,
-                        Err(error) => panic!("Error encountered: {}", error),
-                };
+fn test_verifier() {
+    let c1: SwarmCommand = match "NOOP".parse() {
+        Ok(com1) => com1,
+        Err(error) => panic!("Error encountered: {}", error),
+    };
 
-        let c2: SwarmCommand = match "MOVE".parse()
-                {
-                        Ok(com2) => com2,
-                        Err(error) => panic!("Error encountered: {}", error),
-                };
+    let c2: SwarmCommand = match "MOVE".parse() {
+        Ok(com2) => com2,
+        Err(error) => panic!("Error encountered: {}", error),
+    };
 
-        let c3: SwarmCommand = match "TURN 3.1A".parse()
-                {
-                        Ok(com3) => com3,
-                        Err(error) => panic!("Error encountered: {}", error),
-                };
+    let c3: SwarmCommand = match "TURN 3.14".parse() {
+        Ok(com3) => com3,
+        Err(error) => panic!("Error encountered: {}", error),
+    };
 
-        assert_eq!(c1, SwarmCommand::NOOP);
-        assert_eq!(c2, SwarmCommand::MOVE);
-        assert_eq!(c3, SwarmCommand::TURN(3.14));
+    assert_eq!(c1, SwarmCommand::NOOP);
+    assert_eq!(c2, SwarmCommand::MOVE);
+    assert_eq!(c3, SwarmCommand::TURN(3.14));
 }
 
 /// A swarm program is a list of swarm commands
@@ -94,6 +107,9 @@ fn test_verifier()
 pub struct SwarmProgram {
     /// The list of commands
     pub commands: [SwarmCommand; MAX_NUM_COMMANDS],
+
+    /// Program counter pointing to current command
+    pub program_counter: usize,
 }
 
 /// Some functions for SwarmProgram
@@ -102,6 +118,7 @@ impl SwarmProgram {
     pub fn new() -> Self {
         SwarmProgram {
             commands: [SwarmCommand::NOOP; MAX_NUM_COMMANDS],
+            program_counter: 0,
         }
     }
 }
