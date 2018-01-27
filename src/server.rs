@@ -89,9 +89,9 @@ impl GameServer {
 // TODO: Move all of this into impl for GameServer
 pub fn run() {
     // Server parameters
-    let hostname = "127.0.0.1";
-    let port: u16 = 5977;
-    let update_freq: u64 = 60;
+    let hostname = "0.0.0.0";
+    let port: u16 = 8080;
+    let update_freq: u64 = 1;
     // Create the world
     let world: Arc<RwLock<World>> = Arc::new(RwLock::new(World::new(1000.0, 1000.0)));
     // Copy a reference to world for the clients to use
