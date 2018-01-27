@@ -15,6 +15,7 @@
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 use swarm_language::SwarmProgram;
 use swarm_language::SwarmCommand;
+use world::World;
 use std::f32;
 
 /// The initial size of a swarm
@@ -183,7 +184,7 @@ mod tests {
         println!("{:?}", swarm.program.commands);
 
         // execute commands
-        for i in (0..num_steps) {
+        for _ in 0..num_steps {
             swarm.update(test_world.width, test_world.height);
             println!("x: {}, y: {}, dir: {}", swarm.x, swarm.y, swarm.direction);
         }
@@ -200,7 +201,7 @@ mod tests {
         swarm.program.commands.push(SwarmCommand::TURN(turn_amt));
         swarm.program.commands.push(SwarmCommand::MOVE);
 
-        for i in (0..2) {
+        for _ in 0..2 {
             swarm.update(test_world.width, test_world.height);
             println!("x: {}, y: {}, dir: {}", swarm.x, swarm.y, swarm.direction);
         }

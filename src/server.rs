@@ -174,7 +174,7 @@ pub fn run() {
                     // Write lock goes out of scope, world is again available to be read
                 },
                 Err(error) => {
-                    error!("Error getting write lock: Player not added");
+                    error!("Error getting write lock: {}. Player not added", error);
                     spawn_future(upgrade.reject(), "Failed to add player to world", &handle);
                     return Ok(());
                 }

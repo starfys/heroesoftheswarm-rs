@@ -26,7 +26,7 @@ pub struct GenericError {
 /// Functions for GenericError
 impl GenericError {
     /// Constructor
-    fn new(description: String) -> Self {
+    pub fn new(description: String) -> Self {
         GenericError {
             description: description,
         }

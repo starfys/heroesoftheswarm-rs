@@ -57,9 +57,9 @@ impl FromStr for SwarmCommand {
                             }
                             // If parameter is valid, return from function
                             else {
-                                Err(GenericError {
-                                    description: "Invalid float parameter for TURN.".into(),
-                                })
+                                Err(GenericError::new(
+                                    "Invalid float parameter for TURN.".into(),
+                                ))
                             }
                         } // If parameter is not normal, throw error
                         Err(_) => Err(GenericError {
@@ -150,8 +150,7 @@ impl FromStr for SwarmProgram {
 
 #[test]
 fn test_comlist_generator() {
-    let mut program: String = String::new();
-    program = "  MOVE\n   TURN 30.0\n MOVE\n     NOOP\n".into(); // String is goofy to test whitespace stripping
+    let program: String = "  MOVE\n   TURN 30.0\n MOVE\n     NOOP\n".into(); // String is goofy to test whitespace stripping
 
     // Generate command list from program
     let command_list: SwarmProgram = match program.parse() {
