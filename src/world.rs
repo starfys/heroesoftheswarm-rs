@@ -22,9 +22,9 @@ use std::time::{Duration, Instant};
 #[derive(Clone, Debug)]
 pub struct World {
     /// The width of the world
-    width: f32,
+    pub width: f32,
     /// The height of the world
-    height: f32,
+    pub height: f32,
     /// Each swarm in the world
     /// Map of player ID to swarm
     swarms: HashMap<usize, Swarm>,
@@ -75,7 +75,7 @@ impl World {
         let start_time = Instant::now();
         // Update each member of the swarm with its own program
         for (_id, swarm) in self.swarms.iter_mut() {
-            swarm.update()
+            swarm.update(self.width, self.height)
         }
         // Update each bullet
         // TODO: different logic for this as a bullet could be destroyed

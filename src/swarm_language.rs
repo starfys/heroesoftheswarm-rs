@@ -46,28 +46,32 @@ impl FromStr for SwarmCommand {
         match &command[0] {
             &"MOVE" => Ok(SwarmCommand::MOVE), // Move command case
             &"NOOP" => Ok(SwarmCommand::NOOP), // Noop command case
-            &"TURN" => if command.len() == 2
-            // Check if turn parameter was provided
-            {
-                match command[1].parse::<f32>() {
-                    Ok(val) => if val.is_normal() {
-                        Ok(SwarmCommand::TURN(val))
-                    }
-                    // If parameter is valid, return from function
-                    else {
-                        Err(GenericError {
+            &"TURN" => {
+                if command.len() == 2
+                // Check if turn parameter was provided
+                {
+                    match command[1].parse::<f32>() {
+                        Ok(val) => {
+                            if val.is_normal() {
+                                Ok(SwarmCommand::TURN(val))
+                            }
+                            // If parameter is valid, return from function
+                            else {
+                                Err(GenericError {
+                                    description: "Invalid float parameter for TURN.".into(),
+                                })
+                            }
+                        } // If parameter is not normal, throw error
+                        Err(_) => Err(GenericError {
                             description: "Invalid float parameter for TURN.".into(),
-                        })
-                    }, // If parameter is not normal, throw error
-                    Err(_) => Err(GenericError {
-                        description: "Invalid float parameter for TURN.".into(),
-                    }), // If parameter cannot be converted to float, throw error
+                        }), // If parameter cannot be converted to float, throw error
+                    }
+                } else {
+                    Err(GenericError {
+                        description: "No parameters found for TURN.".into(),
+                    })
                 }
-            } else {
-                Err(GenericError {
-                    description: "No parameters found for TURN.".into(),
-                })
-            }, // No parameter provided
+            } // No parameter provided
             _ => Err(GenericError {
                 description: "Command not recognized.".into(),
             }), // Invalid command case
