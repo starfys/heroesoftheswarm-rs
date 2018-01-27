@@ -15,13 +15,14 @@
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 use error::GenericError;
 use std::str::FromStr;
+use std::f32;
 
 /// The maximum number of commands that can exist in a swarm program
 const MAX_NUM_COMMANDS: usize = 20;
 
 /// Represents a single command in the swarm language
 // TODO: Fully design this language
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SwarmCommand {
     /// Move the swarm forward
     MOVE,
@@ -38,9 +39,56 @@ impl FromStr for SwarmCommand {
     /// Converts a string to a SwarmCommand
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TODO: Parse a line of swarm code as an enum
-        unimplemented!()
+
+        let command: Vec<&str> = s.trim().split(" ").collect();	
+        
+		// Match 
+        match &command[0]
+        {
+                &"MOVE" => Ok(SwarmCommand::MOVE),        // Move command case
+                &"NOOP" => Ok(SwarmCommand::NOOP),        // Noop command case
+                &"TURN" => if command.len() == 2          // Check if turn parameter was provided
+                           {
+                                   match command[1].parse::<f32>()
+                                   {
+                                           Ok(val) => if val.is_normal() { Ok(SwarmCommand::TURN(val)) }        // If parameter is valid, return from function
+										              else { Err(GenericError{ description: "Invalid float parameter for TURN.".into() }) },        // If parameter is not normal, throw error
+                                           Err(_)  => Err(GenericError{ description: "Invalid float parameter for TURN.".into() }),        // If parameter cannot be converted to float, throw error
+                                   }
+                           }
+						   else { Err(GenericError{ description: "No parameters found for TURN.".into() }) },        // No parameter provided
+                _      => Err(GenericError{ description: "Command not recognized.".into() }),        // Invalid command case
+        }
     }
 }
+
+/// Test the string conversion command
+#[test]
+fn test_verifier()
+{
+	let c1: SwarmCommand = match "NOOP".parse()
+                {
+                        Ok(com1) => com1,
+                        Err(error) => panic!("Error encountered: {}", error),
+                };
+
+        let c2: SwarmCommand = match "MOVE".parse()
+                {
+                        Ok(com2) => com2,
+                        Err(error) => panic!("Error encountered: {}", error),
+                };
+
+        let c3: SwarmCommand = match "TURN 3.1A".parse()
+                {
+                        Ok(com3) => com3,
+                        Err(error) => panic!("Error encountered: {}", error),
+                };
+
+        assert_eq!(c1, SwarmCommand::NOOP);
+        assert_eq!(c2, SwarmCommand::MOVE);
+        assert_eq!(c3, SwarmCommand::TURN(3.14));
+}
+
 /// A swarm program is a list of swarm commands
 #[derive(Clone, Debug)]
 pub struct SwarmProgram {
