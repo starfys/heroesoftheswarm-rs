@@ -71,8 +71,7 @@ impl GameServer {
                     let world = world.read().unwrap();
                     Some(OwnedMessage::Text(world.serialize().unwrap()))
                 }
-                _ => None,
-            },
+            }
             // Handle incoming binary data
             OwnedMessage::Binary(_) => None,
             // Handle heartbeats
@@ -195,8 +194,9 @@ where
     F: Future<Item = I, Error = E> + 'static,
     E: Debug,
 {
-    handle.spawn(
-        f.map_err(move |e| info!("{}: '{:?}'", desc, e))
-            .map(move |_| info!("{}: Finished.", desc)),
-    );
+    handle.spawn(f.map_err(move |e| info!("{}: '{:?}'", desc, e)).map(
+        move |_| {
+            info!("{}: Finished.", desc)
+        },
+    ));
 }

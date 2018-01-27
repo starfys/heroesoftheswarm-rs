@@ -103,6 +103,9 @@ fn test_verifier() {
 pub struct SwarmProgram {
     /// The list of commands
     pub commands: [SwarmCommand; MAX_NUM_COMMANDS],
+
+    /// Program counter pointing to current command
+    pub program_counter: usize,
 }
 
 /// Some functions for SwarmProgram
@@ -111,6 +114,7 @@ impl SwarmProgram {
     pub fn new() -> Self {
         SwarmProgram {
             commands: [SwarmCommand::NOOP; MAX_NUM_COMMANDS],
+            program_counter: 0,
         }
     }
 }
