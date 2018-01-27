@@ -123,7 +123,6 @@ impl World {
             if self.bullets[i].duration == 0 {
                 self.bullets.swap_remove(i);
                 i += 1;
-
             }
 
             // collision detection here
@@ -133,8 +132,7 @@ impl World {
                 // TODO: choose the epsilon to consider as "incoming dangerous
                 // bullets"
                 let epsilon: f32 = 10.0;
-                if self.bullets[i].x - swarm.x <= epsilon &&
-                    self.bullets[i].y - swarm.y <= epsilon
+                if self.bullets[i].x - swarm.x <= epsilon && self.bullets[i].y - swarm.y <= epsilon
                 {
                     let mut j: usize = 0;
                     while j < swarm.members.len() {
@@ -147,8 +145,8 @@ impl World {
                                 // detect colllision
                                 // for now detects if the bullet passes within a
                                 // square hitbox around the swarm member
-                                if (self.bullets[i].x - member.x).abs() <= swarm_member_radius &&
-                                    (self.bullets[i].y - member.y).abs() <= swarm_member_radius
+                                if (self.bullets[i].x - member.x).abs() <= swarm_member_radius
+                                    && (self.bullets[i].y - member.y).abs() <= swarm_member_radius
                                 {
                                     member.health -= 1;
 
