@@ -1,0 +1,19 @@
+[package]
+name = "heroesoftheswarm"
+version = "0.2.0"
+authors = ["Steven Sheffey <stevensheffey4@gmail.com>"]
+description = "A swarm-based strategy game based on programming"
+repository = "https://github.com/starfys/heroesoftheswarm-rs"
+readme = "Readme.md"
+keywords = ["game"]
+categories = ["games"]
+license = "GPL-3.0-or-later"
+publish = false
+
+[dependencies]
+env_logger = "0.5.3"
+futures = "0.1"
+log = "0.4"
+time = "0.1"
+tokio-core = "0.1"
+websocket = { version = "0.20", features = ["async", "nightly"] }
