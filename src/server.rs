@@ -23,7 +23,6 @@ use std::thread;
 use std::time::Duration;
 use tokio_core::reactor::{Core, Handle};
 use websocket::message::{Message, OwnedMessage};
-use websocket::server::InvalidConnection;
 use websocket::async::Server;
 use world::World;
 
@@ -80,7 +79,7 @@ impl GameServer {
                     }
                 }
                 _ => None,
-            }
+            },
             // Handle incoming binary data
             OwnedMessage::Binary(_) => None,
             // Handle heartbeats
@@ -173,8 +172,12 @@ pub fn run() {
                     let world_ref = write_lock.deref_mut();
                     world_ref.add_player(session_id);
                     // Write lock goes out of scope, world is again available to be read
+                },
+                Err(error) => {
+                    error!("Error getting write lock: Player not added");
+                    spawn_future(upgrade.reject(), "Failed to add player to world", &handle);
+                    return Ok(());
                 }
-                Err(error) => return Err(()) 
             }
             // accept the request to be a ws connection if it does
             let message_handler = upgrade
@@ -217,9 +220,8 @@ where
     F: Future<Item = I, Error = E> + 'static,
     E: Debug,
 {
-    handle.spawn(f.map_err(move |e| info!("{}: '{:?}'", desc, e)).map(
-        move |_| {
-            info!("{}: Finished.", desc)
-        },
-    ));
+    handle.spawn(
+        f.map_err(move |e| info!("{}: '{:?}'", desc, e))
+            .map(move |_| info!("{}: Finished.", desc)),
+    );
 }

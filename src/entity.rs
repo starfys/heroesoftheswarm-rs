@@ -15,8 +15,7 @@
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 use swarm_language::SwarmProgram;
 use swarm_language::SwarmCommand;
-use world::World;
-use std::f32::{self, consts};
+use std::f32;
 
 /// The initial size of a swarm
 const INITIAL_SWARM_SIZE: usize = 10;
@@ -63,16 +62,15 @@ impl Swarm {
         // TODO: put this somewhere else
         let swarm_update_distance: f32 = 1.0;
         if self.program.commands.len() != 0 {
-
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
                     debug!("Swarm is moving forward");
 
                     // When within EPSILON of edge of the world, bounce off it
-                    let EPSILON: f32 = 10.0;
-                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width ||
-                        self.y - EPSILON <= 0.0 ||
-                        self.y + EPSILON >= world_height
+                    const EPSILON: f32 = 10.0;
+                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width
+                        || self.y - EPSILON <= 0.0
+                        || self.y + EPSILON >= world_height
                     {
                         self.direction = -self.direction;
                     }
@@ -97,7 +95,6 @@ impl Swarm {
             self.program.program_counter %= self.program.commands.len();
 
             // TODO: Check collision
-
         }
     }
 }
@@ -211,7 +208,6 @@ mod tests {
         //assert!(swarm.x - 1.0 <= f32::EPSILON);
         //assert!(swarm.x - 0.0 <= f32::EPSILON);
         assert!(swarm.direction - -turn_amt <= f32::EPSILON);
-
     }
 
     #[test]

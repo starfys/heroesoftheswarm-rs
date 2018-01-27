@@ -22,7 +22,7 @@ fn main() {
     // Initialize the logger
     env_logger::init();
     // Initialize a server
-    let game_server = server::GameServer::new("127.0.0.1", 5977, 1000.0, 1000.0, 1);
+    //let game_server = server::GameServer::new("127.0.0.1", 5977, 1000.0, 1000.0, 1);
     //TODO: change this once server is an object
     server::run();
 }

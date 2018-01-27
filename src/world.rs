@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 extern crate serde_json;
-use entity::{Bullet, Swarm, SwarmMember};
+use entity::{Bullet, Swarm};
 use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 use std::time::{Duration, Instant};
@@ -60,9 +60,9 @@ impl World {
     }
     /// Adds a player to the server with the given ID
     pub fn add_player(&mut self, id: usize) {
-        /// Get a random position
+        // Get a random position
         let (x, y) = self.random_position();
-        /// Get a random color
+        // Get a random color
         let color = World::random_color();
         self.swarms.insert(id, Swarm::new(x, y).with_color(color));
     }
