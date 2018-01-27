@@ -73,7 +73,7 @@ impl Swarm {
     /// Performs 1 tick
     pub fn update(&mut self, world_width: f32, world_height: f32) {
         // TODO: put this somewhere else
-        let swarm_update_distance: f32 = 1.0;
+        let swarm_update_distance: f32 = 100.0;
         if self.program.commands.len() != 0 {
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
@@ -106,53 +106,46 @@ impl Swarm {
             // TODO: Check collision
         }
     }
-	
-	// Calculates the offset for a number of position parameters
-	pub fn calculate_offsets(radius: f32) -> Vec<(f32,f32)>
-	{	
-		// Initialize list with origin offset (0,0)
-		let mut offset_list: Vec<(f32, f32)> = Vec::new();
-		offset_list.push((0.0, 0.0));
-		
-		// Generate other offsets
-		for i in (1..4)
-		{
-			let shell: f32 = i as f32;
-		
-			// Generate i*4 positions for each shell
-			for j in (0..(i*4))
-			{
-				let rads: f32 = (j as f32)*((3.141592654)/(2.0*shell));						// Calculate angle of current offset
-				offset_list.push((shell*radius*(rads.cos()), shell*radius*(rads.sin())));	// Push scaled coordinates onto array
-			}
-		}
-		
-		// Return generated offsets
-		offset_list
-	}
-	
+
+    // Calculates the offset for a number of position parameters
+    pub fn calculate_offsets(radius: f32) -> Vec<(f32, f32)> {
+        // Initialize list with origin offset (0,0)
+        let mut offset_list: Vec<(f32, f32)> = Vec::new();
+        offset_list.push((0.0, 0.0));
+
+        // Generate other offsets
+        for i in (1..4) {
+            let shell: f32 = i as f32;
+
+            // Generate i*4 positions for each shell
+            for j in (0..(i * 4)) {
+                let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
+                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
+            }
+        }
+
+        // Return generated offsets
+        offset_list
+    }
 }
 
 #[test]
-fn test_offset_calc()
-{
-	let rad1: f32 = 1.0;
-	let rad2: f32 = 2.5;
-	
-	let ooflist1: Vec<(f32,f32)> = Swarm::calculate_offsets(rad1);
-	let ooflist2: Vec<(f32,f32)> = Swarm::calculate_offsets(rad2);
-	
-	println!("Offsets of radius 1.0:");
-	for tuple in ooflist1.iter()
-	{
-		println!("{:?}", tuple);
-	}
-	
-	println!("\nOffsets of radius 2.5:");
-	for tuple in ooflist2.iter()
-	{
-		println!("{:?}", tuple);
-	}
+fn test_offset_calc() {
+    let rad1: f32 = 1.0;
+    let rad2: f32 = 2.5;
+
+    let ooflist1: Vec<(f32, f32)> = Swarm::calculate_offsets(rad1);
+    let ooflist2: Vec<(f32, f32)> = Swarm::calculate_offsets(rad2);
+
+    println!("Offsets of radius 1.0:");
+    for tuple in ooflist1.iter() {
+        println!("{:?}", tuple);
+    }
+
+    println!("\nOffsets of radius 2.5:");
+    for tuple in ooflist2.iter() {
+        println!("{:?}", tuple);
+    }
 }
 
 /// Represents a member of a swarm

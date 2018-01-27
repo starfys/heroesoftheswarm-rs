@@ -117,11 +117,11 @@ impl World {
     }
     /// Returns the world in byte representation
     /// Used to render the world on a client
-    pub fn serialize(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(&WorldState {
+    pub fn get_state(&self) -> WorldState {
+        WorldState {
             swarms: self.swarms.clone(),
             bullets: self.bullets.clone(),
-        })
+        }
     }
 }
 
