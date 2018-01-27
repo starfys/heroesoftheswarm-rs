@@ -68,8 +68,16 @@ impl GameServer {
                 "U" => {
                     // Get a readable reference to the world
                     // (locks until the world is not being written)
-                    let world = world.read().unwrap();
-                    Some(OwnedMessage::Text(world.serialize().unwrap()))
+                    match world.read() {
+                        Ok(world) => match world.serialize() {
+                            Ok(serialized_world) => Some(OwnedMessage::Text(serialized_world)),
+                            Err(error) => None,
+                        },
+                        Err(error) => {
+                            warn!("Failed to get read lock on world. Not sending world state");
+                            None
+                        }
+                    }
                 }
                 _ => None,
             },
@@ -93,7 +101,7 @@ pub fn run() {
     let port: u16 = 8080;
     let update_freq: u64 = 60;
     // Create the world
-    let world: Arc<RwLock<World>> = Arc::new(RwLock::new(World::new(1000.0, 1000.0)));
+    let world: Arc<RwLock<World>> = Arc::new(RwLock::new(World::new(1600.0, 900.0)));
     // Copy a reference to world for the clients to use
     let world_client = world.clone();
     // Start the world's main thread
@@ -115,12 +123,16 @@ pub fn run() {
             // Sleep for some amount of time
             thread::sleep(update_delta - last_update_time);
             // Lock the world for writing
-            let mut write_lock = world.write().unwrap();
-            // Get a mutable reference to the world
-            let world_ref = write_lock.deref_mut();
-            // Update the world
-            last_update_time = world_ref.update()
-            // Write lock goes out of scope, world is again available to be read
+            match world.write() {
+                Ok(mut write_lock) => {
+                    // Get a mutable reference to the world
+                    let world_ref = write_lock.deref_mut();
+                    // Update the world
+                    last_update_time = world_ref.update();
+                    // Write lock goes out of scope, world is again available to be read
+                }
+                Err(error) => error!("Error retrieving write lock in update thread: {}", error),
+            }
         }
     });
     // Used to assign IDs to connections (players)
@@ -155,14 +167,14 @@ pub fn run() {
             let session_id: usize = id_counter.fetch_add(1, AtomicOrdering::SeqCst);
             info!("New session id: {}", session_id);
             // Create a swarm for this session
-            // Create a new scope for the write lock
-            {
-                // Get a lock on the world
-                let mut write_lock = world_client.write().unwrap();
-                // Get a mutable reference to the world
-                let world_ref = write_lock.deref_mut();
-                // Insert a new player
-                world_ref.add_player(session_id);
+            match world.write() {
+                Ok(mut write_lock) => {
+                    // Get a mutable reference to the world
+                    let world_ref = write_lock.deref_mut();
+                    world_ref.add_player(session_id);
+                    // Write lock goes out of scope, world is again available to be read
+                }
+                Err(error) => return Err(()) 
             }
             // accept the request to be a ws connection if it does
             let message_handler = upgrade
