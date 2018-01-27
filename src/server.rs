@@ -126,15 +126,19 @@ pub fn run() {
     // Used to assign IDs to connections (players)
     let id_counter: AtomicUsize = AtomicUsize::new(0);
     // Used for serving
-    let mut core = Core::new().unwrap();
+    let mut core = Core::new().expect("Failed to initialize core");
     let handle = core.handle();
     // Bind to an address
-    let server = Server::bind(format!("{}:{}", hostname, port), &handle).unwrap();
+    let server = Server::bind(format!("{}:{}", hostname, port), &handle)
+        .expect("Failed to bind to an address");
     // This future represents what this server is going to do.
     // Handles a stream of incoming connections
     let server_future = server.incoming()
         // Handle errors
-        .map_err(move |InvalidConnection { error, .. }| error)
+        .map(Some)
+        .or_else(|_| -> Result<_, ()> { Ok(None) })
+        .filter_map(|x| x) 
+        //.map_err(move |InvalidConnection { error, .. }| error)
         // Handle connections
         .for_each(move |(upgrade, addr)| {
             // Log the connection
@@ -168,7 +172,7 @@ pub fn run() {
                         // Handle the input and generate output
                         .filter_map(move |message| {
                             // Log the message
-                            info!("Message from Client: {:?}", message);
+                            info!("Message from Client {}: {:?}", session_id, message);
                             // Handle the message by type
                             GameServer::handle_message(message, &world)
                         })
@@ -182,7 +186,7 @@ pub fn run() {
             Ok(())
         });
     info!("Starting the server at {}:{}", hostname, port);
-    core.run(server_future).unwrap();
+    core.run(server_future).expect("Failed to start server");
 }
 
 // TODO: learn what this does and how it works

@@ -23,6 +23,15 @@ pub struct GenericError {
     pub description: String,
 }
 
+/// Functions for GenericError
+impl GenericError {
+    /// Constructor
+    fn new(description: String) -> Self {
+        GenericError {
+            description: description,
+        }
+    }
+}
 /// Allows GenericError to be printed
 impl fmt::Display for GenericError {
     /// Writes the error using a formatter
