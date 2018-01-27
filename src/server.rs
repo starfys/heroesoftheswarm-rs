@@ -162,9 +162,9 @@ pub fn run() {
             }
             // Get a reference to the world for this connection
             let world = world_client.clone();
+            let w = world.clone();
             // Get an ID for this connection
             let session_id: usize = id_counter.fetch_add(1, AtomicOrdering::SeqCst);
-            info!("New session id: {}", session_id);
             // Create a swarm for this session
             match world.write() {
                 Ok(mut write_lock) => {
@@ -197,17 +197,33 @@ pub fn run() {
                         // Handle the input and generate output
                         .filter_map(move |message| {
                             // Log the message
-                            info!("Message from Client {}: {:?}", session_id, message);
+                            debug!("Message from Client {}: {:?}", session_id, message);
                             // Handle the message by type
                             GameServer::handle_message(message, &world)
                         })
                         .forward(sink)
                         .and_then(move |(_, sink)| {
+
+                            // Delete the swarm from this session
+                            match w.write() {
+                                Ok(mut write_lock) => {
+                                    // Get a mutable reference to the world
+                                    let world_ref = write_lock.deref_mut();
+                                    world_ref.remove_player(session_id);
+                                    // Write lock goes out of scope, world is again available to be read
+                                },
+                                Err(error) => {
+                                    error!("Error getting write lock: {}. Player not removed", error);
+                                
+                                }
+                            };
+                            // Send the close message
                             sink.send(OwnedMessage::Close(None))
                         })
                 });
 
             spawn_future(message_handler, "Client Status", &handle);
+            
             Ok(())
         });
     info!("Starting the server at {}:{}", hostname, port);

@@ -60,11 +60,20 @@ impl World {
     }
     /// Adds a player to the server with the given ID
     pub fn add_player(&mut self, id: usize) {
+        info!("Adding player {} to the server", id);
         // Get a random position
         let (x, y) = self.random_position();
         // Get a random color
         let color = World::random_color();
         self.swarms.insert(id, Swarm::new(x, y).with_color(color));
+    }
+
+    /// Removes a player to the server with the given ID
+    pub fn remove_player(&mut self, id: usize) {
+        info!("Removing player {} from the server", id);
+        match self.swarms.remove(&id) {
+            _ => {}
+        }
     }
     /// Generates a random position
     fn random_position(&self) -> (f32, f32) {

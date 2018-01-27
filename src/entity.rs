@@ -36,6 +36,8 @@ pub struct Swarm {
     pub members: Vec<Option<SwarmMember>>,
     /// Color of the swarm
     pub color: (u8, u8, u8),
+    /// Experience gained by the swarm
+    pub experience: i64,
     /// Program used to execute the swarm
     #[serde(skip_serializing)]
     pub program: SwarmProgram,
@@ -50,10 +52,20 @@ impl Swarm {
             direction: 0.0,
             members: vec![Some(SwarmMember::new())],
             color: (0, 0, 0),
-            program: SwarmProgram::new(vec![SwarmCommand::MOVE]),
+            experience: 0,
+            program: SwarmProgram::new(vec![
+                SwarmCommand::MOVE,
+                SwarmCommand::TURN(90.0),
+                SwarmCommand::MOVE,
+                SwarmCommand::TURN(90.0),
+                SwarmCommand::MOVE,
+                SwarmCommand::TURN(90.0),
+                SwarmCommand::MOVE,
+                SwarmCommand::TURN(90.0),
+            ]),
         }
     }
-    /// Builder model
+    /// Supplementary function to add color to a swarm. Typically used with the constructor
     pub fn with_color(mut self, color: (u8, u8, u8)) -> Self {
         self.color = color;
         self
@@ -65,8 +77,6 @@ impl Swarm {
         if self.program.commands.len() != 0 {
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
-                    debug!("Swarm is moving forward");
-
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
                     if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width
@@ -86,9 +96,7 @@ impl Swarm {
                     // Keep direction and program counter within their bounds
                     self.direction %= 360.0;
                 }
-                SwarmCommand::NOOP => {
-                    println!("No operation.");
-                }
+                SwarmCommand::NOOP => {}
             }
 
             // Update program_counter to point to next command
@@ -169,9 +177,9 @@ mod tests {
         let origin_x: f32 = 50.0;
         let origin_y: f32 = 50.0;
         let mut swarm = Swarm::new(origin_x, origin_y);
+        swarm.program.commands.clear();
         let move_command: SwarmCommand = SwarmCommand::MOVE;
         let turn_command: SwarmCommand = SwarmCommand::TURN(-45.0);
-
         // 16 steps to complete move turn pairs at 45 degrees
         let num_steps: usize = 16;
         // append commands to program
