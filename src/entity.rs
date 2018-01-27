@@ -51,7 +51,12 @@ impl Swarm {
     }
     /// Performs 1 tick
     pub fn update(&mut self) {
-        unimplemented!()
+        // TODO: put this somewhere else
+        let swarm_update_distance: f32 = 1.0;
+        // Update the x and y position
+        self.x += swarm_update_distance * self.direction.to_radians().cos();
+        self.y += swarm_update_distance * self.direction.to_radians().sin();
+        // TODO: Check collision
     }
 }
 /// Represents a member of a swarm
@@ -106,10 +111,20 @@ impl Bullet {
 mod tests {
     use super::*;
     #[test]
-    #[should_panic]
     fn update_swarm() {
         let mut swarm = Swarm::new(0.0, 0.0);
+
+        swarm.x = 0.;
+        swarm.y = 0.;
+        assert_eq!(swarm.x, 0.);
+        assert_eq!(swarm.y, 0.);
+
+        swarm.direction = 45.0;
+
         swarm.update();
+
+        assert_eq!(swarm.x, 2_f32.sqrt());
+        assert_eq!(swarm.y, 2_f32.sqrt());
     }
 
     #[test]
