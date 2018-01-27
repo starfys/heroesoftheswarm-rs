@@ -76,7 +76,7 @@ pub struct Bullet {
     /// Y position
     pub y: f32,
     /// Direction in degrees
-
+    pub direction: f32,
 }
 
 /// Functions for a bullet
@@ -88,7 +88,7 @@ impl Bullet {
             owner: owner,
             x: x,
             y: y,
-            direction: 0,
+            direction: 0.0,
         }
     }
     /// Performs 1 tick
@@ -96,8 +96,8 @@ impl Bullet {
         // TODO: put this somewhere else
         let bullet_update_distance: f32 = 1.0;
         // Update the x and y position
-        self.x += bullet_update_distance * self.direction.to_radians.cos();
-        self.y += bullet_update_distance * self.direction.to_radians.sin();
+        self.x += bullet_update_distance * self.direction.to_radians().cos();
+        self.y += bullet_update_distance * self.direction.to_radians().sin();
         // TODO: Check collision
     }
 }
@@ -108,12 +108,11 @@ mod tests {
     #[test]
     #[should_panic]
     fn update_swarm() {
-        let mut swarm = Swarm::new();
+        let mut swarm = Swarm::new(0.0, 0.0);
         swarm.update();
     }
 
     #[test]
-    #[should_panic]
     fn update_bullet() {
         let mut bullet = Bullet::new(0, 0.0, 0.0);
         bullet.update();
