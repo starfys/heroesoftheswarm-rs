@@ -69,7 +69,7 @@ impl GameServer {
                     // Get a readable reference to the world
                     // (locks until the world is not being written)
                     let world = world.read().unwrap();
-                    Some(OwnedMessage::Binary(vec![0; 20000]))
+                    Some(OwnedMessage::Text(world.serialize().unwrap()))
                 }
                 _ => None,
             },
@@ -91,7 +91,7 @@ pub fn run() {
     // Server parameters
     let hostname = "0.0.0.0";
     let port: u16 = 8080;
-    let update_freq: u64 = 1;
+    let update_freq: u64 = 60;
     // Create the world
     let world: Arc<RwLock<World>> = Arc::new(RwLock::new(World::new(1000.0, 1000.0)));
     // Copy a reference to world for the clients to use
@@ -107,7 +107,7 @@ pub fn run() {
         // Main loop
         loop {
             // Log time elapsed in previous update
-            info!(
+            debug!(
                 "Last update took {}s, {}ns",
                 last_update_time.as_secs(),
                 last_update_time.subsec_nanos()
@@ -157,7 +157,7 @@ pub fn run() {
                 // Accept the message
                 .accept()
                 // Respond so the client knows the connection succeeded 
-                .and_then(move |(socket, _)| socket.send(Message::binary(vec![1,3,3,7]).into()))
+                .and_then(move |(socket, _)| socket.send(Message::text(session_id.to_string()).into()))
                 // Build a message responder
                 .and_then(move |socket| {
                     // Get sink and stream

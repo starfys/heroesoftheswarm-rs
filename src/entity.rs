@@ -60,7 +60,7 @@ impl Swarm {
     }
 }
 /// Represents a member of a swarm
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct SwarmMember {
     /// X position
     pub x: f32,
@@ -71,7 +71,7 @@ pub struct SwarmMember {
 }
 
 /// Represents a bullet
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Bullet {
     /// ID of the player that fired this bullet
     /// This is used so the player can't shoot themself

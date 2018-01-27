@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
-use entity::{Bullet, Swarm};
+extern crate serde_json;
+use entity::{Bullet, Swarm, SwarmMember};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -28,10 +29,8 @@ pub struct World {
     /// Map of player ID to swarm
     swarms: HashMap<usize, Swarm>,
     /// Each bullet in the world
-    /// Using a hashmap allows O(1) insertion and deletion
-    /// The key is an increasing id
     /// TODO: vec and element swap
-    bullets: HashMap<usize, Bullet>,
+    bullets: Vec<Bullet>,
 }
 /// Functions for the world
 impl World {
@@ -43,7 +42,7 @@ impl World {
             width: width,
             height: height,
             swarms: HashMap::new(),
-            bullets: HashMap::new(),
+            bullets: Vec::new(),
         }
     }
     /// Capacity constructor
@@ -56,7 +55,7 @@ impl World {
             width: width,
             height: height,
             swarms: HashMap::with_capacity(capacity),
-            bullets: HashMap::with_capacity(capacity * 10),
+            bullets: Vec::with_capacity(capacity * 10),
         }
     }
     /// Performs one "tick" of the world
@@ -73,7 +72,7 @@ impl World {
         }
         // Update each bullet
         // TODO: different logic for this as a bullet could be destroyed
-        for (_id, bullet) in &mut self.bullets {
+        for bullet in &mut self.bullets {
             bullet.update()
         }
         // Record time at end of update and return the time elapsed
@@ -81,9 +80,30 @@ impl World {
     }
     /// Returns the world in byte representation
     /// Used to render the world on a client
-    pub fn serialize(&self) -> Vec<u8> {
-        unimplemented!()
+    pub fn serialize(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(&WorldState {
+            swarm_entities: self.swarms
+                .iter()
+                // Get a vector of each
+                .map(|(id, swarm)| {
+                    swarm
+                        .members
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<Option<SwarmMember>>>()
+                })
+                .flat_map(|member| member)
+                .flat_map(|member| member)
+                .collect(),
+            bullets: self.bullets.clone(),
+        })
     }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct WorldState {
+    swarm_entities: Vec<SwarmMember>,
+    bullets: Vec<Bullet>,
 }
 
 #[cfg(test)]
