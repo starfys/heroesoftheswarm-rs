@@ -110,15 +110,66 @@ impl World {
         for (id, swarm) in self.swarms.iter_mut() {
             swarm.update(*id, self.width, self.height, &mut self.bullets);
         }
+
         // Update each bullet
-        // TODO: different logic for this as a bullet could be destroyed
+
         let mut i: usize = 0;
         while i < self.bullets.len() {
+            // position update bullets
+
             self.bullets[i].update();
+
+            // remove expired bullets
             if self.bullets[i].duration == 0 {
                 self.bullets.swap_remove(i);
                 i += 1;
+
             }
+
+            // collision detection here
+
+            // check each swarm
+            for (id, swarm) in self.swarms.iter_mut() {
+                // TODO: choose the epsilon to consider as "incoming dangerous
+                // bullets"
+                let epsilon: f32 = 10.0;
+                if self.bullets[i].x - swarm.x <= epsilon &&
+                    self.bullets[i].y - swarm.y <= epsilon
+                {
+                    let mut j: usize = 0;
+                    while j < swarm.members.len() {
+                        // collision detection
+                        let swarm_member_radius: f32 = 5.0;
+
+                        // unwrap member
+                        match swarm.members[j] {
+                            Some(mut member) => {
+                                // detect colllision
+                                // for now detects if the bullet passes within a
+                                // square hitbox around the swarm member
+                                if (self.bullets[i].x - member.x).abs() <= swarm_member_radius &&
+                                    (self.bullets[i].y - member.y).abs() <= swarm_member_radius
+                                {
+                                    member.health -= 1;
+
+                                    if member.health == 0 {
+                                        swarm.members[j] = None;
+                                        // increment to next member if member was set to None
+                                        j += 1;
+                                    }
+                                    // delete bullet
+                                    self.bullets.swap_remove(i);
+                                    i += 1;
+                                }
+                            }
+                            None => {}
+                        }
+                        // increment to next member
+                        j += 1;
+                    }
+                }
+            }
+            // increment to next bullet
             i += 1;
         }
         // Record time at end of update and return the time elapsed
