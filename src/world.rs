@@ -27,10 +27,10 @@ pub struct World {
     pub height: f32,
     /// Each swarm in the world
     /// Map of player ID to swarm
-    swarms: HashMap<usize, Swarm>,
+    pub swarms: HashMap<usize, Swarm>,
     /// Each bullet in the world
     /// TODO: vec and element swap
-    bullets: Vec<Bullet>,
+    pub bullets: Vec<Bullet>,
 }
 /// Functions for the world
 impl World {
@@ -61,11 +61,17 @@ impl World {
     /// Adds a player to the server with the given ID
     pub fn add_player(&mut self, id: usize) {
         info!("Adding player {} to the server", id);
+        // TODO: determine the initial number of members to make
+        let initial_num_members: usize = 10;
         // Get a random position
         let (x, y) = self.random_position();
         // Get a random color
         let color = World::random_color();
-        self.swarms.insert(id, Swarm::new(x, y).with_color(color));
+        self.swarms.insert(
+            id,
+            Swarm::new(x, y, initial_num_members)
+                .with_color(color),
+        );
     }
 
     /// Removes a player to the server with the given ID
@@ -104,13 +110,16 @@ impl World {
         // Record time at beginning of update
         let start_time = Instant::now();
         // Update each member of the swarm with its own program
-        for (_id, swarm) in self.swarms.iter_mut() {
-            swarm.update(self.width, self.height)
+        for (id, swarm) in self.swarms.iter_mut() {
+            swarm.update(*id, self.width, self.height, &mut self.bullets);
         }
         // Update each bullet
         // TODO: different logic for this as a bullet could be destroyed
-        for bullet in self.bullets.iter_mut() {
-            bullet.update()
+        for i in 0..self.bullets.len() {
+            self.bullets[i].update();
+            if self.bullets[i].duration == 0 {
+                self.bullets.swap_remove(i);
+            }
         }
         // Record time at end of update and return the time elapsed
         Instant::now().duration_since(start_time)
