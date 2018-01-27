@@ -112,9 +112,9 @@ impl World {
         }
 
         // Update each bullet
-
         let mut i: usize = 0;
-        while i < self.bullets.len() {
+        let mut upper_bound_bullets: usize = self.bullets.len();
+        while i < upper_bound_bullets {
             // position update bullets
 
             self.bullets[i].update();
@@ -122,7 +122,8 @@ impl World {
             // remove expired bullets
             if self.bullets[i].duration == 0 {
                 self.bullets.swap_remove(i);
-                i += 1;
+                upper_bound_bullets -= 1;
+                continue;
             }
 
             // collision detection here
@@ -135,7 +136,8 @@ impl World {
                 if self.bullets[i].x - swarm.x <= epsilon && self.bullets[i].y - swarm.y <= epsilon
                 {
                     let mut j: usize = 0;
-                    while j < swarm.members.len() {
+                    let mut upper_bound_swarm_members: usize = swarm.members.len();
+                    while j < upper_bound_swarm_members {
                         // collision detection
                         let swarm_member_radius: f32 = 5.0;
 
@@ -152,12 +154,10 @@ impl World {
 
                                     if member.health == 0 {
                                         swarm.members[j] = None;
-                                        // increment to next member if member was set to None
-                                        j += 1;
                                     }
                                     // delete bullet
                                     self.bullets.swap_remove(i);
-                                    i += 1;
+                                    upper_bound_bullets -= 1;
                                 }
                             }
                             None => {}
