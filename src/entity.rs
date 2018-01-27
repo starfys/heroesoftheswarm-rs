@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 use swarm_language::SwarmProgram;
+use std::f32::{self, consts};
 
 /// The initial size of a swarm
 const INITIAL_SWARM_SIZE: usize = 10;
@@ -55,7 +56,7 @@ impl Swarm {
         let swarm_update_distance: f32 = 1.0;
         // Update the x and y position
         self.x += swarm_update_distance * self.direction.to_radians().cos();
-        self.y += swarm_update_distance * self.direction.to_radians().sin();
+        self.y -= swarm_update_distance * self.direction.to_radians().sin();
         // TODO: Check collision
     }
 }
@@ -102,7 +103,7 @@ impl Bullet {
         let bullet_update_distance: f32 = 1.0;
         // Update the x and y position
         self.x += bullet_update_distance * self.direction.to_radians().cos();
-        self.y += bullet_update_distance * self.direction.to_radians().sin();
+        self.y -= bullet_update_distance * self.direction.to_radians().sin();
         // TODO: Check collision
     }
 }
@@ -113,23 +114,35 @@ mod tests {
     #[test]
     fn update_swarm() {
         let mut swarm = Swarm::new(0.0, 0.0);
-
-        swarm.x = 0.;
-        swarm.y = 0.;
-        assert_eq!(swarm.x, 0.);
+        // check 0 degree
+        swarm.direction = 0.0;
+        swarm.update();
+        assert_eq!(swarm.x, 1.);
         assert_eq!(swarm.y, 0.);
 
+        // check 45 degree
+        swarm.x = 0.;
+        swarm.y = 0.;
         swarm.direction = 45.0;
-
         swarm.update();
+        assert_eq!(swarm.x, 0.5_f32.sqrt());
+        assert_eq!(swarm.y, -0.5_f32.sqrt());
 
-        assert_eq!(swarm.x, 2_f32.sqrt());
-        assert_eq!(swarm.y, 2_f32.sqrt());
+        // check 90 degree
+        swarm.x = 5.;
+        swarm.y = 0.;
+        swarm.direction = 90.0;
+        swarm.update();
+        assert!(swarm.x - 6. <= f32::EPSILON);
+        assert!(swarm.y == -1.);
     }
 
     #[test]
     fn update_bullet() {
         let mut bullet = Bullet::new(0, 0.0, 0.0);
+        bullet.direction = 90.0;
         bullet.update();
+        assert!(bullet.x - 1. <= f32::EPSILON);
+        assert!(bullet.y - 0. <= f32::EPSILON);
     }
 }
