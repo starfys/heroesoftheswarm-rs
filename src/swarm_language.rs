@@ -86,6 +86,10 @@ impl FromStr for SwarmCommand {
         // Match
         match command[0].to_uppercase().as_str() {
             "MOVE" => Ok(SwarmCommand::MOVE), // Move command case
+            "LEFT" => Ok(SwarmCommand::LEFT), // left strafe
+            "RIGHT" => Ok(SwarmCommand::RIGHT), // left strafe
+            "UP" => Ok(SwarmCommand::UP), // left strafe
+            "DOWN" => Ok(SwarmCommand::DOWN), // left strafe
             "FIRE" => Ok(SwarmCommand::FIRE), // Fire Command case
             "NOOP" => Ok(SwarmCommand::NOOP), // Noop command case
             "TURN" => {
