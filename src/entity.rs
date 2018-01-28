@@ -13,8 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
-use swarm_language::SwarmProgram;
-use swarm_language::SwarmCommand;
+use swarm_language::{Formation, SwarmCommand, SwarmProgram};
 use world::World;
 use std::f32;
 
@@ -51,6 +50,8 @@ pub struct Swarm {
 }
 /// Functions for a swarm
 impl Swarm {
+    /// Swarm speed
+    const UPDATE_DISTANCE: f32 = 5.0;
     /// Constructor
     pub fn new(x: f32, y: f32, num_members: usize) -> Self {
         // Build the offsets
@@ -96,7 +97,6 @@ impl Swarm {
         self.experience += amt;
     }
 
-
     /// Supplementary function to add color to a swarm. Typically used with the constructor
     pub fn with_color(mut self, color: (u8, u8, u8)) -> Self {
         self.color = color;
@@ -111,29 +111,27 @@ impl Swarm {
         bullets: &mut Vec<Bullet>,
     ) {
         // TODO: put this somewhere else
-        let swarm_update_distance: f32 = 5.0;
 
         if self.members.len() <= 0 {
             self.experience = 0;
             // TODO make some kind of respawn flag
         }
 
-
         if self.program.commands.len() != 0 {
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width ||
-                        self.y - EPSILON <= 0.0 ||
-                        self.y + EPSILON >= world_height
+                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width
+                        || self.y - EPSILON <= 0.0
+                        || self.y + EPSILON >= world_height
                     {
                         self.direction = -self.direction;
                     }
 
                     // Update the x and y position
-                    self.x += swarm_update_distance * self.direction.to_radians().cos();
-                    self.y -= swarm_update_distance * self.direction.to_radians().sin();
+                    self.x += Swarm::UPDATE_DISTANCE * self.direction.to_radians().cos();
+                    self.y -= Swarm::UPDATE_DISTANCE * self.direction.to_radians().sin();
                 }
                 SwarmCommand::FIRE => {
                     self.fire(swarm_id, bullets);
@@ -148,6 +146,18 @@ impl Swarm {
                         member.direction %= 360.0;
                     }
                 }
+                SwarmCommand::FORMATION(formation) => match formation {
+                    Formation::GATHER => for (index, member) in self.members.iter_mut().enumerate()
+                    {
+                        member.x = self.offsets[index].0;
+                        member.y = self.offsets[index].1;
+                    },
+                    Formation::SPREAD => for (index, member) in self.members.iter_mut().enumerate()
+                    {
+                        member.x = self.offsets[self.offsets.len() - (1 + index)].0;
+                        member.y = self.offsets[self.offsets.len() - (1 + index)].1;
+                    },
+                },
                 SwarmCommand::NOOP => {}
             }
 
@@ -165,7 +175,6 @@ impl Swarm {
                 self.x + member.x,
                 self.y + member.y,
                 self.direction,
-                self.bullet_duration,
             );
             bullets.push(new_bullet);
         }
@@ -226,10 +235,7 @@ fn test_offset_calc() {
             // Generate i*4 positions for each shell
             for j in (0..(i * 4)) {
                 let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
-                offset_list.push((
-                    shell * radius * (rads.cos()),
-                    shell * radius * (rads.sin()),
-                )); // Push scaled coordinates onto array
+                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
             }
         }
 
@@ -275,29 +281,34 @@ pub struct Bullet {
     /// Direction in degrees
     pub direction: f32,
     /// Duration of bullet in ticks; counts down to 0
-    pub duration: i16,
+    pub duration: i64,
 }
 
 /// Functions for a bullet
 impl Bullet {
+    /// Bullet speed
+    const UPDATE_DISTANCE: f32 = 5.0;
+    /// Default lifetime of bullet
+    const LIFETIME: i64 = 45;
     /// Constructor
     // TODO: add arguments
-    pub fn new(owner: usize, x: f32, y: f32, direction: f32, duration: i16) -> Self {
+    pub fn new(owner: usize, x: f32, y: f32, direction: f32) -> Self {
         Bullet {
             owner: owner,
             x: x,
             y: y,
             direction: direction,
-            duration: duration,
+            duration: Bullet::LIFETIME,
         }
     }
+
     /// Performs 1 tick
     pub fn update(&mut self) {
         // TODO: put this somewhere else
         let bullet_update_distance: f32 = 20.0;
         // Update the x and y position
-        self.x += bullet_update_distance * self.direction.to_radians().cos();
-        self.y -= bullet_update_distance * self.direction.to_radians().sin();
+        self.x += Bullet::UPDATE_DISTANCE * self.direction.to_radians().cos();
+        self.y -= Bullet::UPDATE_DISTANCE * self.direction.to_radians().sin();
         // Update duration by ticks
         self.duration -= 1;
         // TODO: Check collision

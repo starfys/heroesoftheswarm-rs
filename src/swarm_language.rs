@@ -32,6 +32,31 @@ pub enum SwarmCommand {
     TURN(f32),
     /// Do nothing
     NOOP,
+    /// Move into a formation
+    FORMATION(Formation),
+}
+#[derive(Clone, Copy, Debug, PartialEq)]
+/// A formation
+pub enum Formation {
+    /// Gather together
+    GATHER,
+    /// Spread apart
+    SPREAD,
+}
+
+/// Allows conversion of a string to a command
+impl FromStr for Formation {
+    /// The type of error returned if the conversion fails
+    /// Must be implemented
+    type Err = GenericError;
+    /// Converts a string to a SwarmCommand
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "GATHER" => Ok(Formation::GATHER),
+            "SPREAD" => Ok(Formation::SPREAD),
+            _ => Err(GenericError::new("Invalid formation name".into())),
+        }
+    }
 }
 /// Allows conversion of a string to a command
 impl FromStr for SwarmCommand {
@@ -83,6 +108,17 @@ impl FromStr for SwarmCommand {
                     }
                 } else {
                     Err(GenericError::new("No parameters found for TURN.".into())) // No parameter provided
+                }
+            }
+            "FORMATION" => {
+                if command.len() == 2 {
+                    let formation: Formation = match command[1].parse() {
+                        Ok(formation) => formation,
+                        Err(err) => return Err(err),
+                    };
+                    Ok(SwarmCommand::FORMATION(formation))
+                } else {
+                    Err(GenericError::new("Invalid number of arguments for command FORMATION. FORMATION requires 1 argument".into()))
                 }
             }
             _ => Err(

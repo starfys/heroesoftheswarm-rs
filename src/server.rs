@@ -171,7 +171,12 @@ pub fn run() {
                 last_update_time.subsec_nanos()
             );
             // Sleep for some amount of time
-            thread::sleep(update_delta - last_update_time);
+            if last_update_time <= update_delta {
+                thread::sleep(update_delta - last_update_time);
+            } else {
+                // If the thread update took too long
+                warn!("Update thread took too long!")
+            }
             // Lock the world for writing
             match world.write() {
                 Ok(mut write_lock) => {
