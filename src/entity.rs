@@ -41,6 +41,8 @@ pub struct Swarm {
     pub color: (u8, u8, u8),
     /// Experience gained by the swarm
     pub experience: i64,
+    /// More units are earned after 300 experience is full
+    pub pool: i64,
     /// Fire cooldown in ticks
     #[serde(skip_serializing)]
     pub fire_cooldown: i64,
@@ -68,7 +70,8 @@ impl Swarm {
             offsets: offsets,
             color: (0, 0, 0),
             experience: 0,
-            fire_cooldown: 0,      // start with no cooldown
+            pool: 0,
+            fire_cooldown: 0, // start with no cooldown
             formation_cooldown: 0, // start with no cooldown
             program: SwarmProgram::new(vec![
                 SwarmCommand::MOVE,
@@ -98,6 +101,7 @@ impl Swarm {
     /// Adds experience based on stuff TODO TODO
     pub fn add_experience(&mut self, amt: &i64) {
         self.experience += amt;
+        self.pool += amt;
     }
 
     /// Supplementary function to add color to a swarm. Typically used with the constructor
@@ -113,20 +117,36 @@ impl Swarm {
         world_height: f32,
         bullets: &mut Vec<Bullet>,
     ) {
-        // TODO: put this somewhere else
-
+        // lose exp on death
         if self.members.len() <= 0 {
             self.experience = 0;
         }
+
+        // level up
+        if self.pool >= 300 {
+            self.pool -= 300;
+
+            for i in 0..self.members.len() {
+                if !(self.members[i].x == self.offsets[self.offsets.len() - (1 + i)].0 &&
+                         self.members[i].y == self.offsets[self.offsets.len() - (1 + i)].1)
+                {
+                    self.members.push(SwarmMember::new(
+                        self.offsets[self.offsets.len() - (1 + i)].0,
+                        self.offsets[self.offsets.len() - (1 + i)].1,
+                    ));
+                }
+            }
+        }
+
 
         if self.program.commands.len() != 0 {
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width
-                        || self.y - EPSILON <= 0.0
-                        || self.y + EPSILON >= world_height
+                    if self.x - EPSILON <= 0.0 || self.x + EPSILON >= world_width ||
+                        self.y - EPSILON <= 0.0 ||
+                        self.y + EPSILON >= world_height
                     {
                         self.direction = -self.direction;
                     }
@@ -138,9 +158,9 @@ impl Swarm {
                 SwarmCommand::LEFT => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width
-                        && self.y - EPSILON >= 0.0
-                        && self.y + EPSILON < world_height
+                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width &&
+                        self.y - EPSILON >= 0.0 &&
+                        self.y + EPSILON < world_height
                     {
                         self.x += Swarm::UPDATE_DISTANCE;
                     }
@@ -148,9 +168,9 @@ impl Swarm {
                 SwarmCommand::RIGHT => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width
-                        && self.y - EPSILON >= 0.0
-                        && self.y + EPSILON < world_height
+                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width &&
+                        self.y - EPSILON >= 0.0 &&
+                        self.y + EPSILON < world_height
                     {
                         self.x -= Swarm::UPDATE_DISTANCE;
                     }
@@ -158,9 +178,9 @@ impl Swarm {
                 SwarmCommand::UP => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width
-                        && self.y - EPSILON >= 0.0
-                        && self.y + EPSILON < world_height
+                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width &&
+                        self.y - EPSILON >= 0.0 &&
+                        self.y + EPSILON < world_height
                     {
                         self.y -= Swarm::UPDATE_DISTANCE;
                     }
@@ -168,9 +188,9 @@ impl Swarm {
                 SwarmCommand::DOWN => {
                     // When within EPSILON of edge of the world, bounce off it
                     const EPSILON: f32 = 10.0;
-                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width
-                        && self.y - EPSILON >= 0.0
-                        && self.y + EPSILON < world_height
+                    if self.x - EPSILON >= 0.0 && self.x + EPSILON < world_width &&
+                        self.y - EPSILON >= 0.0 &&
+                        self.y + EPSILON < world_height
                     {
                         self.y += Swarm::UPDATE_DISTANCE;
                     }
@@ -195,23 +215,25 @@ impl Swarm {
                     }
                 }
 
-                SwarmCommand::FORMATION(formation) => if self.formation_cooldown == 0 {
-                    match formation {
-                        Formation::GATHER => {
-                            for (index, member) in self.members.iter_mut().enumerate() {
-                                member.x = self.offsets[index].0;
-                                member.y = self.offsets[index].1;
+                SwarmCommand::FORMATION(formation) => {
+                    if self.formation_cooldown == 0 {
+                        match formation {
+                            Formation::GATHER => {
+                                for (index, member) in self.members.iter_mut().enumerate() {
+                                    member.x = self.offsets[index].0;
+                                    member.y = self.offsets[index].1;
+                                }
                             }
-                        }
-                        Formation::SPREAD => {
-                            for (index, member) in self.members.iter_mut().enumerate() {
-                                member.x = self.offsets[self.offsets.len() - (1 + index)].0;
-                                member.y = self.offsets[self.offsets.len() - (1 + index)].1;
+                            Formation::SPREAD => {
+                                for (index, member) in self.members.iter_mut().enumerate() {
+                                    member.x = self.offsets[self.offsets.len() - (1 + index)].0;
+                                    member.y = self.offsets[self.offsets.len() - (1 + index)].1;
+                                }
                             }
-                        }
-                    };
-                    self.formation_cooldown = 30
-                },
+                        };
+                        self.formation_cooldown = 30
+                    }
+                }
                 SwarmCommand::NOOP => {}
             }
 
@@ -297,7 +319,10 @@ fn test_offset_calc() {
             // Generate i*4 positions for each shell
             for j in (0..(i * 4)) {
                 let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
-                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
+                offset_list.push((
+                    shell * radius * (rads.cos()),
+                    shell * radius * (rads.sin()),
+                )); // Push scaled coordinates onto array
             }
         }
 
