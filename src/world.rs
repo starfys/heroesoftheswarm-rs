@@ -15,6 +15,7 @@
 // along with heroesoftheswarm.  If not, see <http://www.gnu.org/licenses/>.
 extern crate serde_json;
 use entity::{Bullet, Swarm};
+use swarm_language::SwarmProgram;
 use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 use std::time::{Duration, Instant};
@@ -85,6 +86,13 @@ impl World {
                 self.bullets.swap_remove(index);
             }
             index += 1;
+        }
+    }
+    /// Updates a player's program
+    pub fn update_program(&mut self, player_id: usize, program: SwarmProgram) {
+        match self.swarms.get_mut(&player_id) {
+            Some(swarm) => swarm.program = program,
+            None => warn!("Invalid player id: {}", player_id),
         }
     }
     /// Generates a random position

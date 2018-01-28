@@ -19,8 +19,12 @@ impl Response {
                 message: ResponseMessage::WORLD(world),
             },
             ResponseMessage::CONFIG(configuration) => Response {
-                message_type: "c".into(),
+                message_type: "i".into(),
                 message: ResponseMessage::CONFIG(configuration),
+            },
+            ResponseMessage::COMPILE(compile_result) => Response {
+                message_type: "c".into(),
+                message: ResponseMessage::COMPILE(compile_result),
             },
         }
     }
@@ -37,6 +41,9 @@ pub enum ResponseMessage {
     /// Sends configuration
     #[serde(rename = "config")]
     CONFIG(Configuration),
+    /// Sends a compilation result
+    #[serde(rename = "compile")]
+    COMPILE(CompileResult),
 }
 
 /// Represents configuration
@@ -44,6 +51,25 @@ pub enum ResponseMessage {
 pub struct Configuration {
     /// The player's ID
     player_id: usize,
+}
+
+/// Represents the output of a compilation
+#[derive(Serialize)]
+pub struct CompileResult {
+    /// Whether the compilation succeeded
+    success: bool,
+    /// Error if applicable
+    error: String,
+}
+
+impl CompileResult {
+    /// Constructor
+    pub fn new(success: bool, error: String) -> Self {
+        CompileResult {
+            success: success,
+            error: error,
+        }
+    }
 }
 
 impl Configuration {
@@ -67,5 +93,5 @@ pub struct Vec2 {
 /// A request for compilation
 #[derive(Deserialize)]
 pub struct CompileRequest {
-    program: String,
+    pub program: String,
 }

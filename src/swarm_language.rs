@@ -51,11 +51,11 @@ impl FromStr for SwarmCommand {
         };
 
         // Match
-        match &command[0] {
-            &"MOVE" => Ok(SwarmCommand::MOVE), // Move command case
-            &"FIRE" => Ok(SwarmCommand::FIRE), // Fire Command case
-            &"NOOP" => Ok(SwarmCommand::NOOP), // Noop command case
-            &"TURN" => {
+        match command[0].to_uppercase().as_str() {
+            "MOVE" => Ok(SwarmCommand::MOVE), // Move command case
+            "FIRE" => Ok(SwarmCommand::FIRE), // Fire Command case
+            "NOOP" => Ok(SwarmCommand::NOOP), // Noop command case
+            "TURN" => {
                 if command.len() == 2
                 // Check if turn parameter was provided
                 {

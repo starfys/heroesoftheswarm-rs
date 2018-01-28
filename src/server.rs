@@ -16,13 +16,14 @@
 extern crate serde_json;
 
 use futures::{Future, Sink, Stream};
-use rpc::{CompileRequest, Configuration, Response, ResponseMessage, Vec2};
+use rpc::{CompileRequest, CompileResult, Configuration, Response, ResponseMessage, Vec2};
 use std::fmt::Debug;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::thread;
 use std::time::Duration;
+use swarm_language::SwarmProgram;
 use tokio_core::reactor::{Core, Handle};
 use websocket::message::{Message, OwnedMessage};
 use websocket::async::Server;
@@ -31,16 +32,16 @@ use world::World;
 /// Represents a server for the game
 // TODO: populate this with parameters
 pub struct GameServer {
-    /// Hostname for the websocket to listen on
-    hostname: String,
-    /// Port for the websocket to listen on
-    port: u16,
-    /// Number of server updates per second
-    update_freq: u64,
-    /// The game's world
-    world: Arc<RwLock<World>>,
-    /// A counter used to assign player IDs to session
-    id_counter: AtomicUsize,
+    // Hostname for the websocket to listen on
+    //hostname: String,
+    // Port for the websocket to listen on
+    //port: u16,
+    // Number of server updates per second
+    //update_freq: u64,
+    // The game's world
+    //world: Arc<RwLock<World>>,
+    // A counter used to assign player IDs to session
+    //id_counter: AtomicUsize,
 }
 impl GameServer {
     /// Constructor
@@ -49,7 +50,7 @@ impl GameServer {
     /// width: width of the game world
     /// height: height of the game world
     /// update_freq: server updates per second
-    pub fn new(hostname: &str, port: u16, width: f32, height: f32, update_freq: u64) -> Self {
+    /*pub fn new(hostname: &str, port: u16, width: f32, height: f32, update_freq: u64) -> Self {
         GameServer {
             hostname: hostname.into(),
             port: port,
@@ -57,11 +58,15 @@ impl GameServer {
             world: Arc::new(RwLock::new(World::new(width, height))),
             id_counter: AtomicUsize::new(0),
         }
-    }
+    }*/
     /// Starts the server
     pub fn start() {}
     /// Handles an incoming websocket message
-    fn handle_message(message: OwnedMessage, world: &Arc<RwLock<World>>) -> Option<OwnedMessage> {
+    fn handle_message(
+        message: OwnedMessage,
+        player_id: usize,
+        world: &Arc<RwLock<World>>,
+    ) -> Option<OwnedMessage> {
         match message {
             // Handle incoming text data
             OwnedMessage::Text(data) => {
@@ -85,17 +90,39 @@ impl GameServer {
                 };
                 // Try to parse it as a request for compilation
                 match serde_json::from_str::<CompileRequest>(&data) {
-                    Ok(compile_request) => match world.read() {
-                        Ok(world) => {
+                    Ok(compile_request) => match world.write() {
+                        Ok(mut write_lock) => {
+                            let world_ref = write_lock.deref_mut();
+                            info!("Compile request: {}", data);
                             // Create a message type
-                            let message = Response::new(ResponseMessage::WORLD(world.get_state()));
-                            match message.serialize() {
-                                Ok(message) => return Some(OwnedMessage::Text(message)),
-                                Err(error) => return None,
+                            match compile_request.program.parse::<SwarmProgram>() {
+                                Ok(compiled_program) => {
+                                    // Update the program
+                                    world_ref.update_program(player_id, compiled_program);
+                                    // Respond with success
+                                    let message = Response::new(ResponseMessage::COMPILE(
+                                        CompileResult::new(true, "".into()),
+                                    ));
+                                    match message.serialize() {
+                                        Ok(message) => return Some(OwnedMessage::Text(message)),
+                                        Err(_) => {}
+                                    }
+                                }
+                                Err(error) => {
+                                    info!("Failed to compile program: {}", error);
+                                    // Generate an output message
+                                    let message = Response::new(ResponseMessage::COMPILE(
+                                        CompileResult::new(false, error.to_string()),
+                                    ));
+                                    match message.serialize() {
+                                        Ok(message) => return Some(OwnedMessage::Text(message)),
+                                        Err(_) => {}
+                                    }
+                                }
                             }
                         }
                         Err(error) => {
-                            warn!("Failed to get read lock on world. Not sending world state");
+                            warn!("Failed to get write lock on world. Not updating program");
                             return None;
                         }
                     },
@@ -236,7 +263,7 @@ pub fn run() {
                             // Log the message
                             debug!("Message from Client {}: {:?}", session_id, message);
                             // Handle the message by type
-                            GameServer::handle_message(message, &world)
+                            GameServer::handle_message(message, session_id, &world)
                         })
                         .forward(sink)
                         .and_then(move |(_, sink)| {
