@@ -74,8 +74,17 @@ impl World {
     /// Removes a player to the server with the given ID
     pub fn remove_player(&mut self, id: usize) {
         info!("Removing player {} from the server", id);
+        // Remove the player's data
         match self.swarms.remove(&id) {
             _ => {}
+        }
+        // Remove the player's bullets
+        let mut index: usize = 0;
+        while index < self.bullets.len() {
+            if self.bullets[index].owner == id {
+                self.bullets.swap_remove(index);
+            }
+            index += 1;
         }
     }
     /// Generates a random position
@@ -132,14 +141,15 @@ impl World {
             for (id, swarm) in self.swarms.iter_mut() {
                 // TODO: choose the epsilon to consider as "incoming dangerous
                 // bullets"
-                let epsilon: f32 = 10.0;
-                if self.bullets[i].x - swarm.x <= epsilon && self.bullets[i].y - swarm.y <= epsilon
+                let epsilon: f32 = 60.0;
+                if (self.bullets[i].x - swarm.x).abs() <= epsilon
+                    && (self.bullets[i].y - swarm.y).abs() <= epsilon
                 {
                     let mut j: usize = 0;
                     let mut upper_bound_swarm_members: usize = swarm.members.len();
                     while j < upper_bound_swarm_members {
                         // collision detection
-                        let swarm_member_radius: f32 = 5.0;
+                        let swarm_member_radius: f32 = 10.0;
 
                         // unwrap member
                         match swarm.members[j] {
@@ -147,17 +157,22 @@ impl World {
                                 // detect colllision
                                 // for now detects if the bullet passes within a
                                 // square hitbox around the swarm member
-                                if (self.bullets[i].x - member.x).abs() <= swarm_member_radius
-                                    && (self.bullets[i].y - member.y).abs() <= swarm_member_radius
+                                if (self.bullets[i].x - (swarm.x + member.x)).abs()
+                                    <= swarm_member_radius
+                                    && (self.bullets[i].y - (swarm.y + member.y)).abs()
+                                        <= swarm_member_radius
+                                    && self.bullets[i].owner != *id
                                 {
                                     member.health -= 1;
-
+                                    info!("HIT");
                                     if member.health == 0 {
+                                        info!("KILL");
                                         swarm.members[j] = None;
                                     }
                                     // delete bullet
                                     self.bullets.swap_remove(i);
                                     upper_bound_bullets -= 1;
+                                    i -= 1;
                                 }
                             }
                             None => {}

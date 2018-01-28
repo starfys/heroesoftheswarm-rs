@@ -72,16 +72,16 @@ impl GameServer {
                             // Create a message type
                             let message = Response::new(ResponseMessage::WORLD(world.get_state()));
                             match message.serialize() {
-                                Ok(message) => Some(OwnedMessage::Text(message)),
-                                Err(error) => None,
+                                Ok(message) => return Some(OwnedMessage::Text(message)),
+                                Err(error) => {}
                             }
                         }
                         Err(error) => {
                             warn!("Failed to get read lock on world. Not sending world state");
-                            None
+                            return None;
                         }
                     },
-                    Err(_) => None,
+                    Err(_) => debug!("Failed to parse request as a viewport"),
                 };
                 // Try to parse it as a request for compilation
                 match serde_json::from_str::<CompileRequest>(&data) {
@@ -90,16 +90,16 @@ impl GameServer {
                             // Create a message type
                             let message = Response::new(ResponseMessage::WORLD(world.get_state()));
                             match message.serialize() {
-                                Ok(message) => Some(OwnedMessage::Text(message)),
-                                Err(error) => None,
+                                Ok(message) => return Some(OwnedMessage::Text(message)),
+                                Err(error) => return None,
                             }
                         }
                         Err(error) => {
                             warn!("Failed to get read lock on world. Not sending world state");
-                            None
+                            return None;
                         }
                     },
-                    Err(_) => None,
+                    Err(_) => debug!("Failed to parse request as a viewport"),
                 };
                 // If it matches none of the cases, just return None
                 None
@@ -246,6 +246,7 @@ pub fn run() {
                                 Ok(mut write_lock) => {
                                     // Get a mutable reference to the world
                                     let world_ref = write_lock.deref_mut();
+                                    // Remove the player
                                     world_ref.remove_player(session_id);
                                     // Write lock goes out of scope, world is again available to be read
                                 },

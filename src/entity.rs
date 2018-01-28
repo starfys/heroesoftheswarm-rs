@@ -31,16 +31,19 @@ pub struct Swarm {
     /// Y position
     pub y: f32,
     /// Direction the swarm is facing
+    #[serde(skip_serializing)]
     pub direction: f32,
     /// Members of the swarm
     pub members: Vec<Option<SwarmMember>>,
     /// Offsets
+    #[serde(skip_serializing)]
     pub offsets: Vec<(f32, f32)>,
     /// Color of the swarm
     pub color: (u8, u8, u8),
     /// Experience gained by the swarm
     pub experience: i64,
     /// Duration of bullets in ticks
+    #[serde(skip_serializing)]
     pub bullet_duration: i16,
     /// Program used to execute the swarm
     #[serde(skip_serializing)]
@@ -100,7 +103,7 @@ impl Swarm {
         bullets: &mut Vec<Bullet>,
     ) {
         // TODO: put this somewhere else
-        let swarm_update_distance: f32 = 10.0;
+        let swarm_update_distance: f32 = 5.0;
         if self.program.commands.len() != 0 {
             match self.program.commands[self.program.program_counter] {
                 SwarmCommand::MOVE => {
@@ -202,31 +205,27 @@ fn test_offset_calc() {
     for tuple in ooflist2.iter() {
         println!("{:?}", tuple);
     }
-	
-	// Calculates the offset for a number of position parameters
-	pub fn calculate_offsets(radius: f32) -> Vec<(f32,f32)>
-	{	
-		// Initialize list with origin offset (0,0)
-		let mut offset_list: Vec<(f32, f32)> = Vec::new();
-		offset_list.push((0.0, 0.0));
-		
-		// Generate other offsets
-		for i in (1..4)
-		{
-			let shell: f32 = i as f32;
-		
-			// Generate i*4 positions for each shell
-			for j in (0..(i*4))
-			{
-				let rads: f32 = (j as f32)*((3.141592654)/(2.0*shell));						// Calculate angle of current offset
-				offset_list.push((shell*radius*(rads.cos()), shell*radius*(rads.sin())));	// Push scaled coordinates onto array
-			}
-		}
-		
-		// Return generated offsets
-		offset_list
-	}
-	
+
+    // Calculates the offset for a number of position parameters
+    pub fn calculate_offsets(radius: f32) -> Vec<(f32, f32)> {
+        // Initialize list with origin offset (0,0)
+        let mut offset_list: Vec<(f32, f32)> = Vec::new();
+        offset_list.push((0.0, 0.0));
+
+        // Generate other offsets
+        for i in 1..4 {
+            let shell: f32 = i as f32;
+
+            // Generate i*4 positions for each shell
+            for j in (0..(i * 4)) {
+                let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
+                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
+            }
+        }
+
+        // Return generated offsets
+        offset_list
+    }
 }
 
 /// Represents a member of a swarm
@@ -248,7 +247,7 @@ impl SwarmMember {
             x: x,
             y: y,
             direction: 0.0,
-            health: 5,
+            health: 1,
         }
     }
 }
@@ -278,7 +277,7 @@ impl Bullet {
             owner: owner,
             x: x,
             y: y,
-            direction: 0.0,
+            direction: direction,
             duration: duration,
         }
     }
@@ -290,7 +289,7 @@ impl Bullet {
         self.x += bullet_update_distance * self.direction.to_radians().cos();
         self.y -= bullet_update_distance * self.direction.to_radians().sin();
         // Update duration by ticks
-        self.duration -= 1
+        self.duration -= 1;
         // TODO: Check collision
     }
 }
