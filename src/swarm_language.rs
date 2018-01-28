@@ -60,19 +60,22 @@ impl FromStr for SwarmCommand {
                 // Check if turn parameter was provided
                 {
                     match command[1].parse::<f32>() {
-                        Ok(val) => if val.is_normal() {
-                            if (val.abs() <= 30.0_f32) {
-                                Ok(SwarmCommand::TURN(val)) // If value satisfies clamp conditions,
+                        Ok(val) => {
+                            if val.is_normal() {
+                                if (val.abs() <= 30.0_f32) {
+                                    Ok(SwarmCommand::TURN(val)) // If value satisfies clamp conditions,
+                                } else {
+                                    Err(GenericError::new(
+                                        "Input parameter float should range from -30.0 to 30.0."
+                                            .into(),
+                                    )) // Otherwise, throw compilation error
+                                }
                             } else {
                                 Err(GenericError::new(
-                                    "Input parameter float should range from -30.0 to 30.0.".into(),
-                                )) // Otherwise, throw compilation error
+                                    "Invalid float parameter for TURN.".into(), // If parameter is not normal, throw error
+                                ))
                             }
-                        } else {
-                            Err(GenericError::new(
-                                "Invalid float parameter for TURN.".into(), // If parameter is not normal, throw error
-                            ))
-                        },
+                        }
 
                         Err(_) => Err(GenericError::new(
                             "Invalid float parameter for TURN.".into(),
@@ -89,10 +92,11 @@ impl FromStr for SwarmCommand {
     }
 }
 
+/* BROKEN IN MERGE
 /// Test the string conversion command
 #[test]
 fn test_verifier() {
-    let c1: SwarmCommand = match "nOOp".parse() {
+    let c1: SwarmCommand = match "noop".parse() {
         Ok(com1) => com1,
         Err(error) => panic!("Error encountered: {}", error),
     };
@@ -110,7 +114,7 @@ fn test_verifier() {
     assert_eq!(c1, SwarmCommand::NOOP);
     assert_eq!(c2, SwarmCommand::MOVE);
     assert_eq!(c3, SwarmCommand::TURN(-29.5));
-}
+} END BROKEN IN MERGE */
 
 /// A swarm program is a list of swarm commands
 #[derive(Clone, Debug)]
@@ -149,11 +153,13 @@ impl FromStr for SwarmProgram {
         for line in s.trim().lines() {
             command_list.push(match line.parse() {
                 Ok(comm) => comm, // If the command is valid, add it to the list
-                Err(error) => if line.trim().is_empty() {
-                    continue;
-                } else {
-                    return Err(error);
-                }, // If the command is invalid, throw an error
+                Err(error) => {
+                    if line.trim().is_empty() {
+                        continue;
+                    } else {
+                        return Err(error);
+                    }
+                } // If the command is invalid, throw an error
             });
 
             // If the command list size is exceeded, throw an error

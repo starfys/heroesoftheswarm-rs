@@ -2,8 +2,7 @@
 ## TODO:
 ### Backend
 * Decide on bounds for the game
-* Ryan's collision stuff
-* Multiple swarm members currently all spawn at the swarm origin.  They need to be distributed within the swarm area
+* More formation work on offsets could be better
 ### Frontend
 * Positions are absolute right now and the bounding isn't implemented
 * Render stuff

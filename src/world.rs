@@ -32,6 +32,8 @@ pub struct World {
     /// Each bullet in the world
     /// TODO: vec and element swap
     pub bullets: Vec<Bullet>,
+    /// Experience queue, updated after iterating through bullets
+    pub exp_queue: Vec<(usize, i64)>,
 }
 /// Functions for the world
 impl World {
@@ -44,6 +46,7 @@ impl World {
             height: height,
             swarms: HashMap::new(),
             bullets: Vec::new(),
+            exp_queue: Vec::new(),
         }
     }
     /// Capacity constructor
@@ -57,6 +60,7 @@ impl World {
             height: height,
             swarms: HashMap::with_capacity(capacity),
             bullets: Vec::with_capacity(capacity * 10),
+            exp_queue: Vec::new(),
         }
     }
     /// Adds a player to the server with the given ID
@@ -68,8 +72,11 @@ impl World {
         let (x, y) = self.random_position();
         // Get a random color
         let color = World::random_color();
-        self.swarms
-            .insert(id, Swarm::new(x, y, initial_num_members).with_color(color));
+        self.swarms.insert(
+            id,
+            Swarm::new(x, y, initial_num_members)
+                .with_color(color),
+        );
     }
 
     /// Removes a player to the server with the given ID
@@ -150,27 +157,31 @@ impl World {
                 // TODO: choose the epsilon to consider as "incoming dangerous
                 // bullets"
                 let epsilon: f32 = 60.0;
-                if (self.bullets[i].x - swarm.x).abs() <= epsilon
-                    && (self.bullets[i].y - swarm.y).abs() <= epsilon
+                if (self.bullets[i].x - swarm.x).abs() <= epsilon &&
+                    (self.bullets[i].y - swarm.y).abs() <= epsilon
                 {
                     let mut j: usize = 0;
                     let mut upper_bound_members = swarm.members.len();
                     while j < upper_bound_members {
                         // collision detection
                         let swarm_member_radius: f32 = 10.0;
-                        // unwrap member
                         // detect colllision
                         // for now detects if the bullet passes within a
                         // square hitbox around the swarm member
-                        if (self.bullets[i].x - (swarm.x + swarm.members[j].x)).abs()
-                            <= swarm_member_radius
-                            && (self.bullets[i].y - (swarm.y + swarm.members[j].y)).abs()
-                                <= swarm_member_radius
-                            && self.bullets[i].owner != *id
+                        if (self.bullets[i].x - (swarm.x + swarm.members[j].x)).abs() <=
+                            swarm_member_radius &&
+                            (self.bullets[i].y - (swarm.y + swarm.members[j].y)).abs() <=
+                                swarm_member_radius &&
+                            self.bullets[i].owner != *id
                         {
                             swarm.members[j].health -= 1;
                             debug!("HIT");
                             if swarm.members[j].health == 0 {
+                                // Track killing player and experience
+                                let cur_bullet_ID = self.bullets[i].owner;
+                                let exp_amt = 1000;
+                                self.exp_queue.push((cur_bullet_ID, exp_amt));
+
                                 debug!("KILL");
                                 swarm.members.swap_remove(j);
                                 upper_bound_members -= 1;
@@ -184,6 +195,11 @@ impl World {
                     }
                 }
             }
+            // update appropriate experience
+            for &(id, exp) in self.exp_queue.iter() {
+                self.swarms.get_mut(&id).unwrap().add_experience(exp);
+            }
+
             // increment to next bullet
             i += 1;
         }
