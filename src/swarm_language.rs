@@ -26,6 +26,14 @@ const MAX_NUM_COMMANDS: usize = 20;
 pub enum SwarmCommand {
     /// Move the swarm forward
     MOVE,
+    /// Move the swarm left
+    LEFT,
+    /// Move the swarm right
+    RIGHT,
+    /// Move the swarm up
+    UP,
+    /// Move the swarm down
+    DOWN,
     /// Swarm fires a bullet in indicated direction
     FIRE,
     /// Rotate the swarm some number of degrees
