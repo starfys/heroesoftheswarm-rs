@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn update_bullet() {
-        let mut bullet = Bullet::new(0, 0.0, 0.0, 0.0, 5);
+        let mut bullet = Bullet::new(0, 0.0, 0.0, 0.0);
         bullet.direction = 90.0;
         bullet.update();
         assert!(bullet.x - 1. <= f32::EPSILON);
