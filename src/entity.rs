@@ -34,7 +34,7 @@ pub struct Swarm {
     #[serde(skip_serializing)]
     pub direction: f32,
     /// Members of the swarm
-    pub members: Vec<Option<SwarmMember>>,
+    pub members: Vec<SwarmMember>,
     /// Offsets
     #[serde(skip_serializing)]
     pub offsets: Vec<(f32, f32)>,
@@ -79,12 +79,12 @@ impl Swarm {
         }
     }
     /// Builds a swarm of N members
-    pub fn build_swarm(num_members: usize, offsets: &Vec<(f32, f32)>) -> Vec<Option<SwarmMember>> {
+    pub fn build_swarm(num_members: usize, offsets: &Vec<(f32, f32)>) -> Vec<SwarmMember> {
         // Vector to store the swarm
-        let mut swarm: Vec<Option<SwarmMember>> = Vec::with_capacity(num_members);
+        let mut swarm = Vec::with_capacity(num_members);
         // add the members
         for i in 0..num_members {
-            swarm.push(Some(SwarmMember::new(offsets[i].0, offsets[i].1)))
+            swarm.push(SwarmMember::new(offsets[i].0, offsets[i].1))
         }
         // Return the swarm
         swarm
@@ -129,13 +129,8 @@ impl Swarm {
                     // Keep direction and program counter within their bounds
                     self.direction %= 360.0;
                     for member in self.members.iter_mut() {
-                        match member {
-                            &mut Some(mut member) => {
-                                member.direction += turn_amt;
-                                member.direction %= 360.0;
-                            }
-                            &mut None => {}
-                        }
+                        member.direction += turn_amt;
+                        member.direction %= 360.0;
                     }
                 }
                 SwarmCommand::NOOP => {}
@@ -150,19 +145,14 @@ impl Swarm {
     pub fn fire(&self, swarm_id: usize, bullets: &mut Vec<Bullet>) {
         // spawn bullet with velocity vector
         for member in &self.members {
-            match member {
-                &Some(cur_swarm_member) => {
-                    let new_bullet: Bullet = Bullet::new(
-                        swarm_id,
-                        self.x + cur_swarm_member.x,
-                        self.y + cur_swarm_member.y,
-                        self.direction,
-                        self.bullet_duration,
-                    );
-                    bullets.push(new_bullet);
-                }
-                &None => {}
-            }
+            let new_bullet: Bullet = Bullet::new(
+                swarm_id,
+                self.x + member.x,
+                self.y + member.y,
+                self.direction,
+                self.bullet_duration,
+            );
+            bullets.push(new_bullet);
         }
     }
 
@@ -178,8 +168,10 @@ impl Swarm {
 
             // Generate i*4 positions for each shell
             for j in 0..(i * 4) {
-                let rads: f32 = (j as f32) * ((3.141592654) / (2.0 * shell)); // Calculate angle of current offset
-                offset_list.push((shell * radius * (rads.cos()), shell * radius * (rads.sin()))); // Push scaled coordinates onto array
+                // Calculate angle of current offset
+                let rads: f32 = (j as f32) * ((f32::consts::PI) / (2.0 * shell));
+                // Push scaled coordinates onto array
+                offset_list.push((shell * radius * rads.cos(), shell * radius * rads.sin()));
             }
         }
 
@@ -247,7 +239,7 @@ impl SwarmMember {
             x: x,
             y: y,
             direction: 0.0,
-            health: 1,
+            health: 5,
         }
     }
 }

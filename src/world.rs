@@ -123,7 +123,7 @@ impl World {
         // Update each bullet
         let mut i: usize = 0;
         let mut upper_bound_bullets: usize = self.bullets.len();
-        while i < upper_bound_bullets {
+        'outer: while i < upper_bound_bullets {
             // position update bullets
 
             self.bullets[i].update();
@@ -146,38 +146,32 @@ impl World {
                     && (self.bullets[i].y - swarm.y).abs() <= epsilon
                 {
                     let mut j: usize = 0;
-                    let mut upper_bound_swarm_members: usize = swarm.members.len();
-                    while j < upper_bound_swarm_members {
+                    let mut upper_bound_members = swarm.members.len();
+                    while j < upper_bound_members {
                         // collision detection
                         let swarm_member_radius: f32 = 10.0;
-
                         // unwrap member
-                        match swarm.members[j] {
-                            Some(mut member) => {
-                                // detect colllision
-                                // for now detects if the bullet passes within a
-                                // square hitbox around the swarm member
-                                if (self.bullets[i].x - (swarm.x + member.x)).abs()
-                                    <= swarm_member_radius
-                                    && (self.bullets[i].y - (swarm.y + member.y)).abs()
-                                        <= swarm_member_radius
-                                    && self.bullets[i].owner != *id
-                                {
-                                    member.health -= 1;
-                                    info!("HIT");
-                                    if member.health == 0 {
-                                        info!("KILL");
-                                        swarm.members[j] = None;
-                                    }
-                                    // delete bullet
-                                    self.bullets.swap_remove(i);
-                                    upper_bound_bullets -= 1;
-                                    i -= 1;
-                                }
+                        // detect colllision
+                        // for now detects if the bullet passes within a
+                        // square hitbox around the swarm member
+                        if (self.bullets[i].x - (swarm.x + swarm.members[j].x)).abs()
+                            <= swarm_member_radius
+                            && (self.bullets[i].y - (swarm.y + swarm.members[j].y)).abs()
+                                <= swarm_member_radius
+                            && self.bullets[i].owner != *id
+                        {
+                            swarm.members[j].health -= 1;
+                            debug!("HIT");
+                            if swarm.members[j].health == 0 {
+                                debug!("KILL");
+                                swarm.members.swap_remove(j);
+                                upper_bound_members -= 1;
                             }
-                            None => {}
+                            // delete bullet
+                            self.bullets.swap_remove(i);
+                            upper_bound_bullets -= 1;
+                            continue 'outer;
                         }
-                        // increment to next member
                         j += 1;
                     }
                 }
