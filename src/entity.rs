@@ -44,6 +44,8 @@ pub struct Swarm {
     /// Duration of bullets in ticks
     #[serde(skip_serializing)]
     pub bullet_duration: i16,
+    /// Fire cooldown in ticks
+    pub fire_cooldown: i16,
     /// Program used to execute the swarm
     #[serde(skip_serializing)]
     pub program: SwarmProgram,
@@ -66,6 +68,7 @@ impl Swarm {
             color: (0, 0, 0),
             experience: 0,
             bullet_duration: 60, // 60fps * 1 seconds default duration
+            fire_cooldown: 0, // start with no cooldown
             program: SwarmProgram::new(vec![
                 SwarmCommand::MOVE,
                 SwarmCommand::TURN(10.0),
@@ -114,7 +117,6 @@ impl Swarm {
 
         if self.members.len() <= 0 {
             self.experience = 0;
-            // TODO make some kind of respawn flag
         }
 
         if self.program.commands.len() != 0 {
@@ -134,7 +136,10 @@ impl Swarm {
                     self.y -= Swarm::UPDATE_DISTANCE * self.direction.to_radians().sin();
                 }
                 SwarmCommand::FIRE => {
+                    // TODO maybe change the fire_cooldown scalar depending
+                    // on what kind of weapon is fired?
                     self.fire(swarm_id, bullets);
+                    self.fire_cooldown = 30; // 60fps * 0.5 seconds
                 }
                 SwarmCommand::TURN(turn_amt) => {
                     // turn logic
@@ -164,6 +169,10 @@ impl Swarm {
             // Update program_counter to point to next command
             self.program.program_counter += 1;
             self.program.program_counter %= self.program.commands.len();
+        }
+        self.fire_cooldown -= 1;
+        if self.fire_cooldown < 0 {
+            self.fire_cooldown = 0;
         }
     }
 
