@@ -92,17 +92,17 @@ impl FromStr for SwarmCommand {
 /// Test the string conversion command
 #[test]
 fn test_verifier() {
-    let c1: SwarmCommand = match "NOOP".parse() {
+    let c1: SwarmCommand = match "nOOp".parse() {
         Ok(com1) => com1,
         Err(error) => panic!("Error encountered: {}", error),
     };
 
-    let c2: SwarmCommand = match "MOVE".parse() {
+    let c2: SwarmCommand = match "MOve".parse() {
         Ok(com2) => com2,
         Err(error) => panic!("Error encountered: {}", error),
     };
 
-    let c3: SwarmCommand = match "TURN -29.5".parse() {
+    let c3: SwarmCommand = match "turn -29.5".parse() {
         Ok(com3) => com3,
         Err(error) => panic!("Error encountered: {}", error),
     };
