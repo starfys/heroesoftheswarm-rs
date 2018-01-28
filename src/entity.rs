@@ -41,11 +41,12 @@ pub struct Swarm {
     pub color: (u8, u8, u8),
     /// Experience gained by the swarm
     pub experience: i64,
-    /// Duration of bullets in ticks
-    #[serde(skip_serializing)]
-    pub bullet_duration: i16,
     /// Fire cooldown in ticks
-    pub fire_cooldown: i16,
+    #[serde(skip_serializing)]
+    pub fire_cooldown: i64,
+    /// Formation cooldown in ticks
+    #[serde(skip_serializing)]
+    pub formation_cooldown: i64,
     /// Program used to execute the swarm
     #[serde(skip_serializing)]
     pub program: SwarmProgram,
@@ -67,8 +68,8 @@ impl Swarm {
             offsets: offsets,
             color: (0, 0, 0),
             experience: 0,
-            bullet_duration: 60, // 60fps * 1 seconds default duration
-            fire_cooldown: 0, // start with no cooldown
+            fire_cooldown: 0,      // start with no cooldown
+            formation_cooldown: 0, // start with no cooldown
             program: SwarmProgram::new(vec![
                 SwarmCommand::MOVE,
                 SwarmCommand::TURN(10.0),
@@ -95,8 +96,7 @@ impl Swarm {
     }
 
     /// Adds experience based on stuff TODO TODO
-    pub fn add_experience(&mut self, amt: i64) {
-        // TODO
+    pub fn add_experience(&mut self, amt: &i64) {
         self.experience += amt;
     }
 
@@ -116,7 +116,7 @@ impl Swarm {
         // TODO: put this somewhere else
 
         if self.members.len() <= 0 {
-            self.experience = 0;
+            //self.experience = 0;
         }
 
         if self.program.commands.len() != 0 {
@@ -138,8 +138,10 @@ impl Swarm {
                 SwarmCommand::FIRE => {
                     // TODO maybe change the fire_cooldown scalar depending
                     // on what kind of weapon is fired?
-                    self.fire(swarm_id, bullets);
-                    self.fire_cooldown = 30; // 60fps * 0.5 seconds
+                    if self.fire_cooldown == 0 {
+                        self.fire(swarm_id, bullets);
+                        self.fire_cooldown = 10; // 60fps * 0.5 seconds
+                    }
                 }
                 SwarmCommand::TURN(turn_amt) => {
                     // turn logic
@@ -151,17 +153,22 @@ impl Swarm {
                         member.direction %= 360.0;
                     }
                 }
-                SwarmCommand::FORMATION(formation) => match formation {
-                    Formation::GATHER => for (index, member) in self.members.iter_mut().enumerate()
-                    {
-                        member.x = self.offsets[index].0;
-                        member.y = self.offsets[index].1;
-                    },
-                    Formation::SPREAD => for (index, member) in self.members.iter_mut().enumerate()
-                    {
-                        member.x = self.offsets[self.offsets.len() - (1 + index)].0;
-                        member.y = self.offsets[self.offsets.len() - (1 + index)].1;
-                    },
+                SwarmCommand::FORMATION(formation) => if self.formation_cooldown == 0 {
+                    match formation {
+                        Formation::GATHER => {
+                            for (index, member) in self.members.iter_mut().enumerate() {
+                                member.x = self.offsets[index].0;
+                                member.y = self.offsets[index].1;
+                            }
+                        }
+                        Formation::SPREAD => {
+                            for (index, member) in self.members.iter_mut().enumerate() {
+                                member.x = self.offsets[self.offsets.len() - (1 + index)].0;
+                                member.y = self.offsets[self.offsets.len() - (1 + index)].1;
+                            }
+                        }
+                    };
+                    self.formation_cooldown = 30
                 },
                 SwarmCommand::NOOP => {}
             }
@@ -171,8 +178,12 @@ impl Swarm {
             self.program.program_counter %= self.program.commands.len();
         }
         self.fire_cooldown -= 1;
+        self.formation_cooldown -= 1;
         if self.fire_cooldown < 0 {
             self.fire_cooldown = 0;
+        }
+        if self.formation_cooldown < 0 {
+            self.formation_cooldown = 0;
         }
     }
 
@@ -290,6 +301,7 @@ pub struct Bullet {
     /// Direction in degrees
     pub direction: f32,
     /// Duration of bullet in ticks; counts down to 0
+    #[serde(skip_serializing)]
     pub duration: i64,
 }
 
@@ -298,7 +310,7 @@ impl Bullet {
     /// Bullet speed
     const UPDATE_DISTANCE: f32 = 5.0;
     /// Default lifetime of bullet
-    const LIFETIME: i64 = 45;
+    const LIFETIME: i64 = 90;
     /// Constructor
     // TODO: add arguments
     pub fn new(owner: usize, x: f32, y: f32, direction: f32) -> Self {
