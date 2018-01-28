@@ -74,11 +74,8 @@ impl World {
         let (x, y) = self.random_position();
         // Get a random color
         let color = World::random_color();
-        self.swarms.insert(
-            id,
-            Swarm::new(x, y, initial_num_members)
-                .with_color(color),
-        );
+        self.swarms
+            .insert(id, Swarm::new(x, y, initial_num_members).with_color(color));
     }
 
     /// Removes a player to the server with the given ID
@@ -181,8 +178,8 @@ impl World {
                 // TODO: choose the epsilon to consider as "incoming dangerous
                 // bullets"
                 let epsilon: f32 = 60.0;
-                if (self.bullets[i].x - swarm.x).abs() <= epsilon &&
-                    (self.bullets[i].y - swarm.y).abs() <= epsilon
+                if (self.bullets[i].x - swarm.x).abs() <= epsilon
+                    && (self.bullets[i].y - swarm.y).abs() <= epsilon
                 {
                     let mut j: usize = 0;
                     let mut upper_bound_members = swarm.members.len();
@@ -192,17 +189,16 @@ impl World {
                         // detect colllision
                         // for now detects if the bullet passes within a
                         // square hitbox around the swarm member
-                        if (self.bullets[i].x - (swarm.x + swarm.members[j].x)).abs() <=
-                            swarm_member_radius &&
-                            (self.bullets[i].y - (swarm.y + swarm.members[j].y)).abs() <=
-                                swarm_member_radius &&
-                            self.bullets[i].owner != *id
+                        if (self.bullets[i].x - (swarm.x + swarm.members[j].x)).abs()
+                            <= swarm_member_radius
+                            && (self.bullets[i].y - (swarm.y + swarm.members[j].y)).abs()
+                                <= swarm_member_radius
+                            && self.bullets[i].owner != *id
                         {
                             swarm.members[j].health -= 1;
                             exp_queue.push((self.bullets[i].owner, 10));
                             debug!("HIT");
                             if swarm.members[j].health == 0 {
-
                                 exp_queue.push((self.bullets[i].owner, 50));
 
                                 debug!("KILL");
